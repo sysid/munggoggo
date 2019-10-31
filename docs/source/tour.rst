@@ -1,7 +1,24 @@
 Feature Tour
 ============
 The building block of the framework is an agent with its behaviour. A behaviour encodes the business logic and
-uses messages for communiction with other agents' behaviours.
+uses messages for communication with other agents' behaviours.
+
+Munggoggo Demo
+-----------------
+The following demo consists of:
+
+1. start RabbitMQ
+2. start agent, which subscribes to the RabbitMQ topic ``ping``
+3. start agent, which publishes to the RabbitMQ topic ``ping``
+4. start agent, which publishes to the RabbitMQ topic ``ping`` and exposes an ASGI application with WEB endpoints
+
+After starting this demo a basic react frontend is available at::
+
+    http://localhost:8000/static/frontend/index.html
+
+.. raw:: html
+
+    <a href="https://asciinema.org/a/278453?t=0.2" target="_blank"><img src="https://asciinema.org/a/278453.svg" /></a>
 
 Run RabbitMQ
 -----------------
