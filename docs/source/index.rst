@@ -76,8 +76,8 @@ Install ``docker`` and ``docker-compose``.
 
 .. code-block:: shell
 
-   $ git clone https://github.com/sysid/agent.git
-   $ pipenv install
+   $ git clone https://github.com/sysid/munggoggo.git
+   $ cd munggoggo; pipenv install
    ✨🍰✨
 
 Only **Python 3.7+** is supported.

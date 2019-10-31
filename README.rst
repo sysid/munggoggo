@@ -76,8 +76,8 @@ Install ``docker`` and ``docker-compose``.
 
 .. code-block:: shell
 
-   $ git clone https://github.com/sysid/agent.git
-   $ pipenv install
+   $ git clone https://github.com/sysid/munggoggo.git
+   $ cd munggoggo; pipenv install
    ✨🍰✨
 
 Only **Python 3.7+** is supported.
@@ -114,7 +114,7 @@ Not everything is 1000% full quality yet so see it as a proof of concept rather 
 
 User Guides
 -----------
-A modern message based async agent framework: version (0.2.0)
+A modern message based async agent framework: version (0.2.1)
 
 .. toctree::
    :maxdepth: 2
