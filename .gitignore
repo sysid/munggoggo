@@ -1,0 +1,13 @@
+.idea/
+aiormq/
+faust/
+starlette-jsonrpc/
+responder/
+munggoggo/static/schema.yaml
+docs/build/
+example.db
+.coverage
+munggoggo/.coverage
+**/.coverage
+tests/static/
+static/schema.yaml

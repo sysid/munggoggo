@@ -1,0 +1,23 @@
+### Send POST request with json body
+POST http://localhost:8000/jsonrpc
+Content-Type: application/json
+
+{
+  "method": "example_rpc_method",
+  "params": [1, 2],
+  "jsonrpc": "2.0",
+  "id": 2
+}
+
+> {%
+client.test("Headers option exists", function() {
+  client.assert(response.status === 200, "Response status is not 200");
+  client.assert(response.body.hasOwnProperty("result"), "Cannot find 'result' option in response");
+});
+client.log("Result of test:");
+client.log(response.body.result);
+%}
+
+###
+
+

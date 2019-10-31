@@ -1,0 +1,52 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+asynctest = "*"
+pytest = "*"
+pytest-asyncio = "*"
+sphinx = "*"
+rinohtype = "*"
+pytest-mock = "*"
+pytest-factoryboy = "*"
+pytest-cov = "*"
+
+[packages]
+tw = {editable = true,path = "./../twpy"}
+ipython = "*"
+aio-pika = "*"
+aiofiles = "*"
+ipykernel = "*"
+requests = "*"
+marshmallow = "*"
+asgiref = "*"
+pyyaml = "*"
+starlette = "*"
+starlette-apispec = "*"
+uvicorn = "*"
+# pipenv --lock problem, but working:
+pytz = "*"
+apistar = "*"
+whitenoise = "*"
+aiofile = "*"
+nejma = "*"
+click = "*"
+monkeytype = "*"
+async-timeout = "*"
+dataclasses-json = "*"
+mode = "*"
+pydot = "*"
+databases = {extras = ["sqlite"],version = "*"}
+munggoggo = {editable = true,path = "."}
+alembic = "*"
+sqlalchemy-utils = "*"
+bump2version = "*"
+starlette-jsonrpc = "*"
+
+[requires]
+python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true

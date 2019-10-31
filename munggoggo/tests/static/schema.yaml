@@ -1,0 +1,57 @@
+components:
+  schemas:
+    PlatformInformation:
+      properties:
+        name:
+          type: string
+      type: object
+info:
+  description: explanation of the api purpose
+  title: Example API
+  version: '1.0'
+openapi: 3.0.0
+paths:
+  /:
+    get: {}
+  /jsonrpc:
+    post:
+      description: RPC
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                id: 1
+                jsonrpc: '2.0'
+                method: multiply
+                params:
+                - 5
+                - 5
+              properties:
+                id:
+                  type: integer
+                jsonrpc:
+                  type: string
+                method:
+                  type: string
+                params:
+                  type: object
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                example:
+                  id: 1
+                  jsonrpc: '2.0'
+                  result: 25
+                properties:
+                  id:
+                    type: integer
+                  jsonrpc:
+                    type: string
+                  result:
+                    type: object
+                type: object
+          description: result of RPC method

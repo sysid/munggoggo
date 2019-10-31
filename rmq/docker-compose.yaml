@@ -1,0 +1,16 @@
+version: "3"
+services:
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    hostname: "rmq01"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+      - "15671:15671"
+      - "5671:5671"
+    labels:
+      NAME: "rmq01"
+    volumes:
+      - "./enabled_plugins:/etc/rabbitmq/enabled_plugins"
+      - "./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro"
+      #- "/home/tw/.v2/certificates:/home/tw/.v2/certificates:ro"
