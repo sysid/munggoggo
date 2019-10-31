@@ -12,9 +12,6 @@ Agents are isolated processes which can host multiple parallel running `behaviou
 logic and can be deployed as dedicated pods in a kubernetes cluster. WEB communication access to the
 agent network via REST/HTTP, websocket and jsonrpc.
 
-.. image:: munggoggo.png
-   :scale: 100 %
-
 Documentation: https://munggoggo.readthedocs.io/en/latest/
 
 .. code:: python

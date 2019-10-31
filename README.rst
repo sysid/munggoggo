@@ -12,9 +12,6 @@ Agents are isolated processes which can host multiple parallel running `behaviou
 logic and can be deployed as dedicated pods in a kubernetes cluster. WEB communication access to the
 agent network via REST/HTTP, websocket and jsonrpc.
 
-.. image:: munggoggo.png
-   :scale: 100 %
-
 Documentation: https://munggoggo.readthedocs.io/en/latest/
 
 .. code:: python
@@ -114,7 +111,7 @@ Not everything is 1000% full quality yet so see it as a proof of concept rather 
 
 User Guides
 -----------
-A modern message based async agent framework: version (0.2.1)
+A modern message based async agent framework: version (0.2.2)
 
 .. toctree::
    :maxdepth: 2
