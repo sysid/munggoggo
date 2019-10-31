@@ -18,6 +18,7 @@ all: clean docs bump
 	@echo "--------------------------------------------------------------------------------"
 	@echo "-M- commit changes"
 	@echo "-M- use <bump!> to confirm"
+	@echo "-M- commit amend README.rst"
 	@echo "-M- use <release> to switch to 'prod'"
 	@echo "--------------------------------------------------------------------------------"
 	@git status
