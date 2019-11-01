@@ -76,7 +76,7 @@ Frontend
 A basic react frontend is available at::
 
     http://localhost:8000/static/frontend/index.html
-    
+
 .. image:: munggoggo.png
    :scale: 100 %
 

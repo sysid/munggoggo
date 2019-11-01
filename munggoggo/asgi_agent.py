@@ -24,6 +24,7 @@ from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.responses import JSONResponse, HTMLResponse
 from starlette.staticfiles import StaticFiles
+from starlette.websockets import WebSocket
 from starlette_apispec import APISpecSchemaGenerator
 from starlette_jsonrpc import dispatcher
 
@@ -57,6 +58,7 @@ class WsController(WebSocketEndpoint):
     counter = 0
     encoding = "json"
 
+    # TODO: only working for one connection: https://github.com/taoufik07/nejma
     async def on_receive(self, websocket, data):
         app = self.scope.get('app')
         core = app.agent
@@ -89,6 +91,13 @@ class WsController(WebSocketEndpoint):
         await websocket.accept()
         msg = dict(msg=f"Connected with {core.identity}")
         await websocket.send_json(msg)
+
+    async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
+        app = self.scope.get('app')
+        app.ws = None
+        core = app.agent
+        await websocket.close(code=1000)
+        core.log.info(f"Webscoket connection closed by client {websocket.client}")
 
 
 class AsgiAgent(Starlette):
