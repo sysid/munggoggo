@@ -369,9 +369,6 @@ class Core(MyService):
                 )
 
     async def _update_peers(self) -> None:
-        """ ping broadcast
-            response pong is being stored by pong handler in self.peers
-        """
         msg = PingControl().serialize()
         correlation_id = str(uuid.uuid4())
         await self.fanout_send(
