@@ -4,7 +4,7 @@ https://github.com/encode/uvicorn/issues/183#issuecomment-515735604
 In order to run message-consumers based on aio-pika inside a set of HTTP endpoints served by uvicorn
 in the same event loop, it requires to move configuration and initialization of consumers inside the app served by uvicorn.
 """
-
+import asyncio
 import logging
 import os
 
@@ -22,7 +22,7 @@ from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.responses import JSONResponse, HTMLResponse
+from starlette.responses import JSONResponse, HTMLResponse, StreamingResponse
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket
 from starlette_apispec import APISpecSchemaGenerator
@@ -31,7 +31,7 @@ from starlette_jsonrpc import dispatcher
 from agent import Agent
 from jsonrpc_endpoint import ExampleRpcEndpoint
 from messages import ManageBehav
-from settings import DEFAULT_CORS_PARAMS, html2
+from settings import DEFAULT_CORS_PARAMS, html2, html_sse
 from utils import setup_logging
 
 _log = logging.getLogger(__name__)
@@ -132,7 +132,8 @@ class AsgiAgent(Starlette):
         self.add_event_handler("startup", self.agent.start)
         self.add_event_handler("shutdown", self.agent.stop)
 
-        self.add_middleware(GZipMiddleware)
+        # Gotcha: not working with SSE streaming
+        # self.add_middleware(GZipMiddleware, minimum_size=1000)
 
         self.cors = False
         self.cors_params = DEFAULT_CORS_PARAMS
@@ -151,6 +152,8 @@ class AsgiAgent(Starlette):
         self.add_route("/", self.homepage, methods=["GET"], include_in_schema=True)
         self.add_route(path=f"/jsonrpc", route=ExampleRpcEndpoint, include_in_schema=True)
         self.add_route(path=f"/openapi", route=self.openapi, include_in_schema=False)
+        self.add_route(path=f"/html_sse", route=self.html_sse, include_in_schema=True)
+        self.add_route(path=f"/sse", route=self.sse, include_in_schema=False)
         self.add_route(path=f"/ws_html", route=self.ws_html, include_in_schema=False)
         self.add_websocket_route(path='/ws', route=WsController, name='ws')
 
@@ -195,8 +198,32 @@ class AsgiAgent(Starlette):
             })
         )
 
-    def ws_html(req, request):
+    def ws_html(self, request):
         return HTMLResponse(html2)
+
+    def html_sse(self, request):
+        return HTMLResponse(html_sse)
+
+    async def sse(self, request):
+
+        async def slow_numbers(minimum, maximum):
+            yield ('<html><body><ul>')
+            for number in range(minimum, maximum + 1):
+                yield '<li>%d</li>' % number
+                await asyncio.sleep(0.5)
+            yield ('</ul></body></html>')
+
+        # generator = slow_numbers(1, 5)
+        generator = self.agent.publish_sse(interval=1)
+
+        headers = {
+            "Content-Type": "text/event-stream",
+            "Content-Encoding": "identity",  # TODO: remove
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+        return StreamingResponse(generator, headers=headers, media_type="text/html")
 
     async def openapi(self, request):
         # noinspection PyTypeChecker

@@ -111,7 +111,7 @@ async def test_get_behaviour(core1):
 
 @pytest.mark.usefixtures("init_rmq")
 @pytest.mark.asyncio
-class TestPeriodicTasks:
+class TestPeriodicPeerUpdate:
     async def test_service_itertimer(self, core1, capsys):
         """ demonstrate itertimer usage """
 
@@ -134,6 +134,16 @@ class TestPeriodicTasks:
         assert len(core1.peers.all()) == 1
         identities = [status.name for (date, status, category) in core1.peers.all()]
         assert 'core1' in identities
+
+    async def test_update_peers_self_create_status_message(self, core1):
+        # given
+        expected = {'from': 'core1', 'peers': [{'name': 'core1', 'state': 'running', 'behaviours': []}]}
+
+        # when core is initialized
+
+        # then messages must be created
+        msg = core1._create_peer_msg()
+        assert msg == expected
 
     async def test_periodic_update_peers(self):
         identity = "core1"

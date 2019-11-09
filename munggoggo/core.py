@@ -3,7 +3,10 @@ from __future__ import (
 )  # make all type hints be strings and skip evaluating them
 
 import asyncio
+import io
+import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from types import TracebackType
@@ -369,6 +372,9 @@ class Core(MyService):
                 )
 
     async def _update_peers(self) -> None:
+        """ Triggers update of peer list
+            PongControl handler update self.peers
+        """
         msg = PingControl().serialize()
         correlation_id = str(uuid.uuid4())
         await self.fanout_send(
@@ -381,16 +387,20 @@ class Core(MyService):
         _interval = want_seconds(interval)
         async for _ in self.itertimer(_interval):
             await self._update_peers()
-            latest = self.peers.latest()
-            corr_id = latest[2]
-            peers = sorted([status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],
-                           key=lambda status: status.name)
-            peers = CoreStatus.schema().dump(peers, many=True)
-            msg = {
-                'from': self.identity,
-                'peers': peers
-            }
+            msg = self._create_peer_msg()
             await self._publish_ws(msg)
+
+    def _create_peer_msg(self) -> JSONType:
+        latest = self.peers.latest()
+        corr_id = latest[2]
+        peers = sorted([status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],
+                       key=lambda status: status.name)
+        peers = CoreStatus.schema().dump(peers, many=True)
+        msg = {
+            'from': self.identity,
+            'peers': peers
+        }
+        return msg
 
     async def _publish_ws(self, msg: JSONType):
         if self.web and self.web.ws:
@@ -399,6 +409,36 @@ class Core(MyService):
                 await self.web.ws.send_json(msg)
             except RuntimeError as e:
                 self.log.exception(e)
+
+    # TODO: https://github.com/aio-libs/aiohttp-sse/blob/66407db5752d19abd4d312f0b22fa8106feb6ca2/aiohttp_sse/__init__.py
+    async def publish_sse(self, interval: int, id: str = None, event: str = None, retry: int = None):
+        self.DEFAULT_SEPARATOR = '\r\n'
+        self.LINE_SEP_EXPR = re.compile(r'\r\n|\r|\n')
+        self._sep = self.DEFAULT_SEPARATOR
+        async for _ in self.itertimer(want_seconds(interval)):
+            data = json.dumps(self._create_peer_msg())
+            buffer = io.StringIO()
+            if id is not None:
+                buffer.write(self.LINE_SEP_EXPR.sub('', 'id: {}'.format(id)))
+                buffer.write(self._sep)
+
+            if event is not None:
+                buffer.write(self.LINE_SEP_EXPR.sub('', 'event: {}'.format(event)))
+                buffer.write(self._sep)
+
+            for chunk in self.LINE_SEP_EXPR.split(data):
+                buffer.write('data: {}'.format(chunk))
+                buffer.write(self._sep)
+
+            if retry is not None:
+                if not isinstance(retry, int):
+                    raise TypeError('retry argument must be int')
+                buffer.write('retry: {}'.format(retry))
+                buffer.write(self._sep)
+
+            buffer.write(self._sep)
+            self.log.warning(buffer.getvalue().encode('utf-8'))
+            yield buffer.getvalue().encode('utf-8')
 
     def __repr__(self):
         return "{}".format(self.__class__.__name__)

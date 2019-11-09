@@ -128,3 +128,20 @@ html2 = """
 </html>
 """
 
+html_sse = """
+    <html>
+    <body>
+        <script>
+            var evtSource = new EventSource("/sse");
+            console.log("evtSource: ", evtSource);
+            evtSource.onmessage = function(e) {
+                document.getElementById('response').innerText = e.data;
+                console.log(e);
+            }
+        </script>
+        <h1>Response from server:</h1>
+        <div id="response"></div>
+    </body>
+</html>
+"""
+
