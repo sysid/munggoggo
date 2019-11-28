@@ -45,6 +45,19 @@ Out of the box it comes with a sqlite database in the project root: ``example.db
 
    $ python historian.py
 
+To check that entries are stored in DB:
+
+.. code-block:: shell
+
+   $ python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo World 2\", \"date\": 1546300800.0}"}' "MSG_TYPE" SqlAgent
+   $ sqlite3 example.db 'select * from json_data'
+
+   -- Loading resources from /home/tw/.sqliterc
+   id          ts                          sender      rmq_type    content_type  routing_key  data
+   ----------  --------------------------  ----------  ----------  ------------  -----------  --------------------------------------------------
+   1           2019-11-28 16:16:52.896147  ctrl        MSG_TYPE    DemoData      SqlAgent     {"message": "Hallo World 2", "date": 1546300800.0}
+
+
 
 ASGI Agent for WEB exposure
 ---------------------------
