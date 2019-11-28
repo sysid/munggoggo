@@ -65,7 +65,7 @@ html_theme = 'alabaster'
 html_theme_options = {
     "show_powered_by": False,
     "github_user": "sysid",
-    "github_repo": "agent",
+    "github_repo": "munggoggo",
     "github_banner": False,
     "show_related": False,
 }
