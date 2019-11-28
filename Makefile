@@ -42,8 +42,9 @@ bump:
 	@echo "use <bump!> to confirm"
 
 bump!:
-	bump2version --allow-dirty --verbose patch
 	cp docs/source/index.rst README.rst  # changed by bump2version
+	git add README.rst
+	bump2version --allow-dirty --verbose patch
 	@echo "use release after bump"
 
 release:
