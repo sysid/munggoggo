@@ -37,15 +37,19 @@ clean:
 	#git clean -Xdf
 	rm -rf docs/build
 
-bump:
-	bump2version --dry-run --allow-dirty --verbose patch
+bump: check
+	@echo "Bumping part: $(part)"
+	bump2version --dry-run --allow-dirty --verbose $(part)
 	@echo "use <bump!> to confirm"
 
-bump!:
+bump!: check
 	cp docs/source/index.rst README.rst  # changed by bump2version
 	git add README.rst
-	bump2version --allow-dirty --verbose patch
+	bump2version --allow-dirty --verbose $(part)
 	@echo "use release after bump"
 
 release:
 	bump2version --allow-dirty --verbose release
+
+check:
+	@[ "${part}" ] || ( echo "-E- bump2version-part is not set"; exit 1 )
