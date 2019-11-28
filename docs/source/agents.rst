@@ -32,7 +32,7 @@ being used, e.g. start/stop of agent behaviour (call).
    $ python ctrl.py broadcast '{"c_type": "DemoData", "c_data": "{\"message\": \"Hello World\", \"date\": 1546300800.0}"}' "MSG_TYPE"
    $ python ctrl.py list-behaviour SqlAgent
    $ python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo World 2\", \"date\": 1546300800.0}"}' "MSG_TYPE" SqlAgent
-   $ python ctrl.py call start|stop qlAgent SqlBehav
+   $ python ctrl.py call start|stop SqlAgent SqlBehav
 
 
 Historian
