@@ -403,8 +403,8 @@ class Core(MyService):
             }
             await self._publish_ws(msg)
 
-    async def list_peers(self):
-        """ list all peers which have respondet to the latest PING """
+    async def list_peers(self) -> TraceStore:  # TODO: make property out of method
+        """ list all peers which have responded to the latest PING """
         latest = self.peers.latest()
         corr_id = latest[2]
         peers = sorted([status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],

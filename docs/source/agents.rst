@@ -8,7 +8,8 @@ Whenever an agents starts it sends a PING broadcast to all peers. They respond w
 
 Control Agent
 -----------------
-Agent to send control messages to one or all agents in the system.
+Agent to send control messages to one or all agents in the system. For certain commands the RPC interface is
+being used, e.g. start/stop of agent behaviour (call).
 
 .. code-block:: shell
 
@@ -22,6 +23,7 @@ Agent to send control messages to one or all agents in the system.
 
    Commands:
      broadcast
+     call  # RPC call
      list-behaviour
      list-peers
      send-message

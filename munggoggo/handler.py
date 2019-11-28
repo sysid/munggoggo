@@ -180,11 +180,15 @@ class RpcHandler(SystemHandler):
         behav = self.core.get_behaviour(rpc_obj.behav)
         if behav:
             if rpc_obj.command == 'start':
-                await behav.start()
-                rpc_obj.result = f"{behav} started."
+                if not behav.started:
+                    await behav.start()
+                    rpc_obj.result = f"{behav} started."
+                else:
+                    rpc_obj.result = f"{behav} already running."
             elif rpc_obj.command == 'stop':
-                await behav.stop()
-                behav.service_reset()
+                if behav.started:
+                    await behav.stop()
+                    behav.service_reset()
                 rpc_obj.result = f"{behav} stopped: {behav.state}"
             else:
                 rpc_obj.result = f"Unknown command {rpc_obj.command}."

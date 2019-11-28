@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'munggoggo'))
 
 from behaviour import Behaviour
 from core import Core
-from messages import ListBehav
+from messages import ListBehav, ManageBehav
 
 from utils import setup_logging
 
@@ -94,10 +94,40 @@ async def list_peers(ctx):
         click.echo(f"Listing peers.")
         peers = await a.list_peers()
         click.echo(f"{[peer.get('name') for peer in peers]}")
-        # obj = ListBehav()
-        # result = await a.call(obj.to_rpc(), agent)
-        # print(result)
-        # await asyncio.sleep(0.1)  # required for context cleanup
+        await asyncio.sleep(0.1)  # required for context cleanup
+        print(f"Duration: {datetime.now() - start}")
+
+
+@cli.command()
+@click.argument('command')
+@click.argument('target')
+@click.argument('behav')
+@click.pass_context
+@coro
+async def call(ctx, command, target, behav):
+    async with Ctrl(identity="ctrl") as a:
+        a.logger.setLevel(LOGGING_LEVEL)
+        peers = [peer.get('name') for peer in await a.list_peers()]
+        if target not in peers:
+            click.echo(f"Invalid target: {target}. Choose one of: {peers}.")
+            return False
+        click.echo(f"Sending command: '{command}' to {target}:{behav}")
+        obj = ManageBehav(
+            behav=behav,
+            command=None,
+        )
+        if command in ['Stop', 'stop']:
+            obj.command = "stop"
+        elif command in ['Start', 'start']:
+            obj.command = "start"
+        else:
+            click.echo(f"Invalid command.")
+            click.echo(f"Expected one of [start, stop]")
+
+        result = await a.call(obj.to_rpc(), target=target)
+        click.echo(f"rpc result: {result}")
+
+        await asyncio.sleep(0.1)  # required for context cleanup
         print(f"Duration: {datetime.now() - start}")
 
 
@@ -107,12 +137,17 @@ if __name__ == "__main__":
     python ctrl.py broadcast '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}' "xx"
     python ctrl.py list-behaviour SqlAgent
     python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo2\", \"date\": 1546300800.0}"}' "xx" SqlAgent
+    python ctrl.py call start SqlAgent SqlAgent.SqlBehav
+    python ctrl.py call start SqlAgent SqlBehav
     """
     start = datetime.now()
     # list_peers([])
     # list_behaviour(['SqlAgent'])
     # broadcast(['{"command": "presence"}', "control", "--debug", True])
     # send_message(['{"command": "list_behaviour"}', "control", "agent1"])
+    # call(['Stop', 'SqlAgent', "SqlAgent.SqlBehav"])
+    # call(['Stop', 'SqlAgent', "SqlBehav"])
+    # call(['start', 'SqlAgent', "SqlBehav"])
 
     ################################################################################
     # activate CLI
