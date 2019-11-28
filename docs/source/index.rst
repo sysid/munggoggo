@@ -50,6 +50,7 @@ Features
 
 - asyncio based agent framework.
 - RabbitMQ messaging backend.
+- Basic agents provided as building blocks.
 - **agents can have (multiple) behaviours!**
 - agents and their behaviours form a graph and can be visualized.
 - communication model: broadcast, point-to-point, topics pub-sub, RPC
@@ -115,6 +116,7 @@ A modern message based async agent framework: version (0.3.0)
    :maxdepth: 2
 
    tour
+   agents
    core
    behaviour
    asgi
@@ -124,8 +126,9 @@ A modern message based async agent framework: version (0.3.0)
 Ideas
 -----
 
-- https://github.com/ask/mode !!!
 - I love `Volttron <https://github.com/VOLTTRON/volttron>`_ ...
+- https://github.com/ask/mode
+- MQTT and AMQP as cloud agnostic messaging backbone.
 - `Uvicorn <https://www.uvicorn.org/>`_ built-in as a production web server.
 
 .. - https://github.com/javipalanca/spade

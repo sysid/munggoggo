@@ -44,6 +44,12 @@ class TestBasics:
         assert isinstance(core1.status, CoreStatus)
         assert core1.status.to_json() == '{"name": "core1", "state": "running", "behaviours": []}'
 
+    async def test_list_peers(self, core1, core2, ctrl):
+        await ctrl._update_peers()
+        await asyncio.sleep(0.1)  # relinquish cpu
+        peers = await ctrl.list_peers()
+        assert len(peers) == 3
+
 
 @pytest.mark.usefixtures("init_rmq")
 @pytest.mark.asyncio

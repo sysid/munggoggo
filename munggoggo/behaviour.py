@@ -48,6 +48,8 @@ class Behaviour(MyService):
         Outgoing messages can either be broadcast to all listening agents
         or point-to-point sent to one agent
         or sent to a message topic (PubSub pattern)
+
+        TODO: make it abstract class
     """
 
     def __init__(self, core, *,
@@ -330,6 +332,7 @@ class SqlBehav(Behaviour):
             metadata,
             Column("id", Integer, primary_key=True),
             Column("ts", TIMESTAMP(timezone=True)),
+            Column("sender", String(length=256)),
             Column("rmq_type", String(length=100)),
             Column("content_type", String(length=100)),
             Column("routing_key", String(length=256)),
@@ -363,6 +366,7 @@ class SqlBehav(Behaviour):
                 if msg_type:
                     obj = SerializableObject.deserialize(msg.body.decode(), msg_type=msg_type)
                     data = {
+                        "sender": msg.app_id,
                         "rmq_type": msg.type,
                         "content_type": obj.__class__.__name__,
                         "ts": utcnow(),

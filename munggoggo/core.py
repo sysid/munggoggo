@@ -390,20 +390,27 @@ class Core(MyService):
         )
 
     async def periodic_update_peers(self, interval):
-        """ Sends periodic keepalive message to all peers (if UPDATE_PEER_INTERVAL is set). """
+        """ Sends periodic keepalive message to all peers (if UPDATE_PEER_INTERVAL is set)
+            and publishes the latest peer responses as peer list to websocket.
+        """
         _interval = want_seconds(interval)
         async for _ in self.itertimer(_interval):
             await self._update_peers()
-            latest = self.peers.latest()
-            corr_id = latest[2]
-            peers = sorted([status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],
-                           key=lambda status: status.name)
-            peers = CoreStatus.schema().dump(peers, many=True)
+            peers = await self.list_peers()
             msg = {
                 'from': self.identity,
                 'peers': peers
             }
             await self._publish_ws(msg)
+
+    async def list_peers(self):
+        """ list all peers which have respondet to the latest PING """
+        latest = self.peers.latest()
+        corr_id = latest[2]
+        peers = sorted([status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],
+                       key=lambda status: status.name)
+        peers = CoreStatus.schema().dump(peers, many=True)
+        return peers
 
     async def _publish_ws(self, msg: JSONType):
         if self.web and self.web.ws:

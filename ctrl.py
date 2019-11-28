@@ -48,12 +48,13 @@ def cli(ctx, debug):
 @click.argument('target')
 @click.pass_context
 @coro
-async def send_message(msg, msg_type, target):
+async def send_message(ctx, msg, msg_type, target):
     async with Ctrl(identity="ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
-        click.echo(f"Sending '{msg_type}' msg: {msg} to {target}")
+        click.echo(f"Sending type: '{msg_type}' msg: {msg} to {target}")
         await a.direct_send(msg=msg, msg_type=msg_type, target=target)
         await asyncio.sleep(0.1)  # required for context cleanup
+        print(f"Duration: {datetime.now() - start}")
 
 
 @cli.command()
@@ -63,9 +64,10 @@ async def send_message(msg, msg_type, target):
 async def broadcast(msg, msg_type):
     async with Ctrl(identity="ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
-        click.echo(f"Broadcasting '{msg_type}' msg: {msg}")
+        click.echo(f"Broadcasting type: '{msg_type}' msg: {msg}")
         await a.fanout_send(msg=msg, msg_type=msg_type)
         await asyncio.sleep(0.1)  # required for context cleanup
+        print(f"Duration: {datetime.now() - start}")
 
 
 @cli.command()
@@ -82,14 +84,32 @@ async def list_behaviour(ctx, agent):
         await asyncio.sleep(0.1)  # required for context cleanup
         print(f"Duration: {datetime.now() - start}")
 
-# TODO list_agents
+
+@cli.command()
+@click.pass_context
+@coro
+async def list_peers(ctx):
+    async with Ctrl(identity="ctrl") as a:
+        a.logger.setLevel(LOGGING_LEVEL)
+        click.echo(f"Listing peers.")
+        peers = await a.list_peers()
+        click.echo(f"{[peer.get('name') for peer in peers]}")
+        # obj = ListBehav()
+        # result = await a.call(obj.to_rpc(), agent)
+        # print(result)
+        # await asyncio.sleep(0.1)  # required for context cleanup
+        print(f"Duration: {datetime.now() - start}")
+
 
 if __name__ == "__main__":
     """
     python ctrl.py 'xxx' "type" "agent2" 
     python ctrl.py broadcast '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}' "xx"
+    python ctrl.py list-behaviour SqlAgent
+    python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo2\", \"date\": 1546300800.0}"}' "xx" SqlAgent
     """
     start = datetime.now()
+    # list_peers([])
     # list_behaviour(['SqlAgent'])
     # broadcast(['{"command": "presence"}', "control", "--debug", True])
     # send_message(['{"command": "list_behaviour"}', "control", "agent1"])

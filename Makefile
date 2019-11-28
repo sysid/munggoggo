@@ -14,7 +14,7 @@ help:
 default: all
 
 #all: unit
-all: clean docs bump
+all: check clean docs bump
 	@echo "--------------------------------------------------------------------------------"
 	@echo "-M- commit changes"
 	@echo "-M- use <bump!> to confirm"
@@ -52,4 +52,4 @@ release:
 	bump2version --allow-dirty --verbose release
 
 check:
-	@[ "${part}" ] || ( echo "-E- bump2version-part is not set"; exit 1 )
+	@[ "${part}" ] || ( echo "-E- bump2version <part> is not set"; exit 1 )

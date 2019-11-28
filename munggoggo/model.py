@@ -17,6 +17,7 @@ json_data = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("ts", TIMESTAMP(timezone=True)),
+    Column("sender", String(length=256)),
     Column("rmq_type", String(length=100)),
     Column("content_type", String(length=100)),
     Column("routing_key", String(length=256)),
