@@ -110,7 +110,7 @@ Not everything is 100% full quality (yet), so see it as proof of concept rather 
 
 User Guides
 -----------
-A modern message based async agent framework: version (0.4.1)
+A modern message based async agent framework: version (0.4.2-dev0)
 
 .. toctree::
    :maxdepth: 2
