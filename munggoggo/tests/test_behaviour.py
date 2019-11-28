@@ -53,7 +53,7 @@ class TestBasics:
 
         # when two messages of type xxx is sent
         for i in range(n):
-            await behav.direct_send(msg="xxxxx", msg_type='xxx')
+            await behav.direct_send(msg=f"{i}:xxxxx", msg_type='xxx')
         await asyncio.sleep(0.1)  # relinquish cpu
 
         # then mailbox_size must be two
@@ -78,8 +78,8 @@ async def sql_behav(core1):
 class TestSqlBehaviour:
     async def test_connect_to_db(self, core1, json_data_values):
         json_data_values = [
-            {"type": "type1", "ts": utcnow(), "data": '{"a": "aaa", "b": "bbb"}'},
-            {"type": "type1", "ts": utcnow(), "data": '{"a": "xxx", "b": "yyy"}'},
+            {"content_type": "type1", "ts": utcnow(), "data": '{"a": "aaa", "b": "bbb"}'},
+            {"content_type": "type1", "ts": utcnow(), "data": '{"a": "xxx", "b": "yyy"}'},
         ]
 
         b = SqlBehav(core1)
@@ -173,3 +173,27 @@ class TestSqlBehaviour:
         query = json_data.select()
         rows = await sql_behav.db.fetch_all(query=query)
         assert len(rows) == 1
+
+    async def test_receive_topic_and_store_unknown_obj(self, sql_behav, caplog):
+        caplog.set_level(logging.DEBUG)
+
+        # Given SerializableObject message
+        @dataclass_json
+        @dataclass
+        class MyData(SerializableObject):
+            message: str
+            date: datetime = None
+
+        # when this message type is not added to behaviour
+        # when message of this type is then sent to topic
+        msg = MyData(
+            message="xxxx",
+            date=datetime(2019, 1, 1, tzinfo=pytz.UTC)
+        ).serialize()
+        # when messages are published
+        await sql_behav.publish(msg, "x.y")
+        await asyncio.sleep(0.1)  # relinquish cpu
+
+        # then message must not be written in database
+        assert any([record for record in caplog.records if record.levelname == "ERROR"])
+        assert 'Unknown message type' in caplog.text

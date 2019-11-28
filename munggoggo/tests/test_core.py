@@ -23,7 +23,6 @@ class TestBasics:
     async def test_agent_fixture(self, core1):
         assert await core1.dummy()
 
-
     async def test_without_contextmanager(self, event_loop):
         identity = "twagent"
         a = Core(identity=identity)
@@ -88,7 +87,6 @@ class TestCommunication:
 
 @pytest.mark.asyncio
 async def test_get_behaviour(core1):
-
     # given
     class Behav1(Behaviour):
         async def run(self):
@@ -174,4 +172,3 @@ class TestPeriodicTasks:
             identities = [status.name for (date, status, category) in a.peers.all()]
             assert 'core1' in identities
             assert 'ctrl' in identities
-

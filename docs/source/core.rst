@@ -10,6 +10,9 @@ munggoggo.core
 ==============
 Core functionality of an agent.
 
+- provides a configurable FIFO cache of all received messages
+- holds a cache of all peers and their last update timestamp (keepalive message)
+
 .. automodule:: core
    :members:
 

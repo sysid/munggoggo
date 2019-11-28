@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 import sqlalchemy
 from asgiref.sync import sync_to_async
 from databases import Database
-from sqlalchemy import MetaData, Table, Column
+from sqlalchemy import MetaData, Table, Column, Integer, TIMESTAMP, String, Text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from twpy import utcnow
@@ -43,8 +43,9 @@ class BehaviourNotFinishedException(Exception):
 class Behaviour(MyService):
     """ Behaviour is a Service which defines set of actions
 
-        all incoming messages are queued into input queue
-        outgoing messages can either by broadcast to all listening agents
+        All incoming messages are queued into input mailbox.
+
+        Outgoing messages can either be broadcast to all listening agents
         or point-to-point sent to one agent
         or sent to a message topic (PubSub pattern)
     """
@@ -107,14 +108,6 @@ class Behaviour(MyService):
     def exit_code(self, value: Any):
         self._exit_code = value
 
-    def set(self, name: str, value: Any) -> None:
-        """ Stores a knowledge item in the agent knowledge base. """
-        self.core.set(name, value)
-
-    def get(self, name: str) -> Any:
-        """ Recovers a knowledge item from the agent's knowledge base. """
-        return self.core.get(name)
-
     async def on_start(self):
         """ Coroutine called before the behaviour is started.
         """
@@ -139,6 +132,7 @@ class Behaviour(MyService):
         self.log.debug(f"{self.name} done.")
 
     async def setup(self):
+        """ to be overwritten by user """
         pass
 
     async def on_stop(self) -> None:
@@ -147,24 +141,21 @@ class Behaviour(MyService):
         await self.teardown()
 
     async def teardown(self):
+        """ to be overwritten by user """
         pass
 
     async def on_shutdown(self):
         self.set_shutdown()
-        # for coro in self.on_end_coros:
-        #     await coro
         await asyncio.gather(*self.on_end_coros)
         self.log.info(f"{self.name} shutdown: {self.state}")
 
     async def _on_end(self):
         await self.on_end()
-
         self.log.debug(f"{self.name} done.")
 
     async def on_end(self):
         """ Coroutine called after the behaviour is done or killed.
-
-            will be overwritten by custom behaviour!!!
+            To be overwritten by user.
         """
         self.log.debug(f"{self.name} done.")
 
@@ -172,8 +163,8 @@ class Behaviour(MyService):
         return self._force_kill.is_set()
 
     async def run(self):
-        """ Body of the behaviour, runs per step of runloop
-        To be implemented by user.
+        """ Body of the behaviour, runs every step of runloop
+            To be overwritten by user.
         """
         await asyncio.sleep(0.1)
 
@@ -213,27 +204,31 @@ class Behaviour(MyService):
             self.log.info(f"---------- loop final ----------")
 
     async def enqueue(self, message: Message):
-        """ Enqueues a message in the behaviour's mailbox """
+        """ Enqueues a message in the behaviour's incoming mailbox """
         self.log.debug(f"message enqueued: {message.body}")
         await self.queue.put(message)
 
     def mailbox_size(self) -> int:
+        """ returns mailbox size """
         return self.queue.qsize()
 
     async def direct_send(self, msg: str, msg_type: str, target: str = None, correlation_id: str = None):
+        """ Sends message to default exchange, 1:1 communication """
         await self.core.direct_send(msg, msg_type, target, correlation_id)
         # self.agent.traces.append(TraceStoreMessage.from_msg(msg), category=str(self))
 
     async def publish(self, msg: str, routing_key: str):
+        """ Publishes message to topic, 1:n communication """
         await self.core.publish(msg, routing_key)
         # self.agent.traces.append(TraceStoreMessage.from_msg(msg), category=str(self))
 
     async def fanout_send(self, msg: str, msg_type: str):
+        """ Sends message to fanout exchange, 1:n communication """
         await self.core.fanout_send(msg, msg_type)
         # self.agent.traces.append(TraceStoreMessage.from_msg(msg), category=str(self))
 
     async def receive(self, timeout: float = None) -> IncomingMessage:
-        """ Receives a message for this behaviour.
+        """ Receives a message from inbox mailbox.
 
        If timeout is not None it returns the message or "None"
        after timeout is done.
@@ -254,16 +249,19 @@ class Behaviour(MyService):
         return msg
 
     async def receive_all(self) -> AsyncIterable[IncomingMessage]:
+        """ Receives all messages from inbox mailbox. """
         while self.queue.qsize() != 0:
             yield await self.receive()
 
     async def get_and_dispatch(self, timeout: float = None):
+        """ Reads a message from inbox and dispatches it to known handler. """
         msg = await self.receive(timeout=timeout)
         if msg:
             self.log.info(f"{self.name}: Message: {msg.body.decode()}")
             return await self.dispatch(msg)
 
     async def dispatch(self, msg: IncomingMessage, handlers: Registry = None) -> None:
+        """ Dispatch message to handler. """
         if handlers is None:
             handlers = self.handlers
 
@@ -277,6 +275,7 @@ class Behaviour(MyService):
 
     @subsystem.expose
     async def example_rpc_method(self, x, y, flag=None, **kwargs):
+        """ Sample RPC method: multiplies to numbers """
         self.log.info(
             f"example_method: Signature: {inspect.signature(self.example_rpc_method)}"
         )
@@ -294,6 +293,7 @@ class Behaviour(MyService):
 
 
 class EmptyBehav(Behaviour):
+    """ Do nothing, just overwrite methods."""
     async def on_start(self):
         print(f"Starting {self.name} . . .")
 
@@ -306,7 +306,7 @@ class EmptyBehav(Behaviour):
 
 
 class SqlBehav(Behaviour):
-    """ Subscribes to topic and stores known message_types to database """
+    """ Stores all messages arriving in mailbox to SQL-DB (sqlite) as json blob """
 
     def __init__(self, core, *,
                  beacon: NodeT = None,
@@ -319,17 +319,21 @@ class SqlBehav(Behaviour):
         self.db: Optional[Database] = None
         self.engine: Optional[Engine] = None
         self.metadata: Optional[MetaData] = None
+        # TODO: Generalize example
         self.msg_types: Dict[str, Type[SerializableObject]] = {DemoData.__name__: DemoData}
 
+        # ATTENTION: keep in sync with model.json_data definition !!!
         # allow already serialized json to be inserted in JSON column as text
         # as class variable overwrites tests while loading (startup-time vs. runtime)
         self.json_data = Table(
             "json_data",
             metadata,
-            Column("id", sqlalchemy.Integer, primary_key=True),
-            Column("ts", sqlalchemy.TIMESTAMP(timezone=True)),
-            Column("type", sqlalchemy.String(length=100)),
-            Column("data", sqlalchemy.Text),
+            Column("id", Integer, primary_key=True),
+            Column("ts", TIMESTAMP(timezone=True)),
+            Column("rmq_type", String(length=100)),
+            Column("content_type", String(length=100)),
+            Column("routing_key", String(length=256)),
+            Column("data", Text),
             extend_existing=True  # allow redefinition to JSON column to send json string
         )
 
@@ -358,25 +362,29 @@ class SqlBehav(Behaviour):
 
                 if msg_type:
                     obj = SerializableObject.deserialize(msg.body.decode(), msg_type=msg_type)
-                    await self.save_to_db(obj)
+                    data = {
+                        "rmq_type": msg.type,
+                        "content_type": obj.__class__.__name__,
+                        "ts": utcnow(),
+                        "routing_key": msg.routing_key,
+                        "data": obj.to_json()
+                    }
+                    await self.save_to_db(data)
                 else:
                     self.log.error(f"Unknown message type {msg_type_key} read from topics {self.binding_keys}.")
+                    self.log.error(f"Expected types: {[mtype for mtype in self.msg_types.keys()]}.")
                     self.log.error(f"Not saving to DB")
         except WrongMessageFormatException as e:
             # self.log.exception(f"{e}", exc_info=sys.exc_info())
             self.log.exception(f"{e}")
 
-    async def save_to_db(self, obj):
-        if isinstance(obj, SerializableObject):
-            data = {"type": obj.__class__.__name__, "ts": utcnow(), "data": obj.to_json()}
-            query = self.json_data.insert()
-            try:
-                await self.db.execute(query=query, values=data)
-            except SQLAlchemyError as e:
-                self.log.exception(e)
-                raise
-        else:
-            self.log.warning(f"Only type 'SerializableObject' can be stored to db, got: {type(obj)}.")
+    async def save_to_db(self, data: dict) -> None:
+        query = self.json_data.insert()
+        try:
+            await self.db.execute(query=query, values=data)
+        except SQLAlchemyError as e:
+            self.log.exception(e)
+            raise
 
     async def on_end(self):
         await self.db.disconnect()

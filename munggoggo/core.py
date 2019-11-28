@@ -161,10 +161,11 @@ class Core(MyService):
         await self.setup()
 
     async def setup(self):
-        """ to be overwritten by agent """
+        """ to be overwritten by user """
         pass
 
     async def configure_exchanges(self):
+        """ Configures the exchanges: TOPIC, FANOUT """
         self.topic_exchange = await self.channel.declare_exchange(
             name=BINDING_KEY_TOPIC, type=ExchangeType.TOPIC
         )
@@ -225,7 +226,7 @@ class Core(MyService):
         self.log.info(f"Agent stopped: {self.state}")
 
     async def teardown(self):
-        """" To be overwritten by agent class """
+        """" To be overwritten by user """
         pass
 
     async def on_shutdown(self):
@@ -248,12 +249,15 @@ class Core(MyService):
     #         self.log.info("Client disconnected.")
 
     def has_behaviour(self, behaviour):
+        """ Tests for behaviour """
         return behaviour in self.behaviours
 
     def list_behaviour(self):
+        """ Lists all behaviours """
         return [str(behav) for behav in self.behaviours]
 
     def get_behaviour(self, name: str) -> Optional[ServiceT]:
+        """ Returns the behaviour """
         behav = [behav for behav in self.behaviours if str(behav).endswith(name)]
         if len(behav) > 1:
             self.log.warning(
@@ -264,6 +268,7 @@ class Core(MyService):
         return behav[0]
 
     async def call(self, msg: str, target: str = None) -> str:
+        """ Sends PRC call """
         if target is None:
             target = self.identity  # loopback send
 
@@ -299,6 +304,7 @@ class Core(MyService):
             correlation_id: str = None,
             headers: dict = None,
     ) -> None:
+        """ Sends message to default exchange """
         if target is None:
             target = self.identity  # loopback send to itself
         await self.channel.default_exchange.publish(
@@ -313,6 +319,7 @@ class Core(MyService):
     async def fanout_send(
             self, msg: str, msg_type: RmqMessageTypes.name, correlation_id: str = None, headers: dict = None
     ) -> None:
+        """ Sends message to fanout exchange """
         await self.fanout_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
             routing_key=BINDING_KEY_FANOUT,
@@ -383,6 +390,7 @@ class Core(MyService):
         )
 
     async def periodic_update_peers(self, interval):
+        """ Sends periodic keepalive message to all peers (if UPDATE_PEER_INTERVAL is set). """
         _interval = want_seconds(interval)
         async for _ in self.itertimer(_interval):
             await self._update_peers()

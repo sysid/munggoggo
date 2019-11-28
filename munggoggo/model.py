@@ -11,14 +11,18 @@ _log = logging.getLogger(__name__)
 
 metadata = MetaData()
 
+# ATTENTION: keep in sync with SqlBehviour.json_data definition !!!
 json_data = Table(
     "json_data",
     metadata,
     Column("id", Integer, primary_key=True),
     Column("ts", TIMESTAMP(timezone=True)),
-    Column("type", String(length=100)),
+    Column("rmq_type", String(length=100)),
+    Column("content_type", String(length=100)),
+    Column("routing_key", String(length=256)),
     Column("data", JSON),
 )
+
 
 class TsDb(object):
     def __init__(self, url: str, meta: MetaData, *args, **kwargs):
@@ -30,7 +34,6 @@ class TsDb(object):
         self.engine = create_engine(url, echo=True)
         self.meta = meta
         # metadata.bind = self.engine
-
 
     @staticmethod
     def create_new_db(url) -> None:
@@ -76,4 +79,3 @@ class TsDb(object):
 
     def has_table(self, name) -> bool:
         return self.meta.tables.get(name) is not None
-
