@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
 
 from behaviour import Behaviour
 from core import Core
-from messages import ListBehav, ManageBehav
+from messages import ListBehav, ManageBehav, ListTraceStore
 from twpy import coro
 from utils import setup_logging
 
@@ -99,6 +99,14 @@ async def list_peers(ctx):
         print(f"Duration: {datetime.now() - start}")
 
 
+async def target_exists(core: Core, target: str) -> bool:
+    peers = [peer.get("name") for peer in await core.list_peers()]
+    if target not in peers:
+        click.echo(f"Invalid target: {target}. Choose one of: {peers}.")
+        return False
+    return True
+
+
 @cli.command()
 @click.argument("command")
 @click.argument("target")
@@ -108,10 +116,14 @@ async def list_peers(ctx):
 async def call(ctx, command, target, behav):
     async with Ctrl(identity="ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
-        peers = [peer.get("name") for peer in await a.list_peers()]
-        if target not in peers:
-            click.echo(f"Invalid target: {target}. Choose one of: {peers}.")
+
+        if not await target_exists(a, target):
             return False
+
+        # peers = [peer.get("name") for peer in await a.list_peers()]
+        # if target not in peers:
+        #     click.echo(f"Invalid target: {target}. Choose one of: {peers}.")
+        #     return False
         click.echo(f"Sending command: '{command}' to {target}:{behav}")
         obj = ManageBehav(behav=behav, command=None,)
         if command in ["Stop", "stop"]:
@@ -125,6 +137,26 @@ async def call(ctx, command, target, behav):
 
         result = await a.call(obj.to_rpc(), target=target)
         click.echo(f"rpc result: {result}")
+
+        await asyncio.sleep(0.1)  # required for context cleanup
+        print(f"Duration: {datetime.now() - start}")
+
+
+@cli.command()
+@click.argument("target")
+@click.pass_context
+@coro
+async def list_traces(ctx, target):
+    async with Ctrl(identity="ctrl") as a:
+        a.logger.setLevel(LOGGING_LEVEL)
+
+        if not await target_exists(a, target):
+            return False
+
+        obj = ListTraceStore()
+
+        result = await a.call(obj.to_rpc(), target=target)
+        click.echo(result.traces)
 
         await asyncio.sleep(0.1)  # required for context cleanup
         print(f"Duration: {datetime.now() - start}")
@@ -148,6 +180,7 @@ if __name__ == "__main__":
     # call(['Stop', 'SqlAgent', "SqlAgent.SqlBehav"])
     # call(['Stop', 'SqlAgent', "SqlBehav"])
     # call(['start', 'SqlAgent', "SqlBehav"])
+    # list_traces(["SqlAgent"])
 
     ################################################################################
     # activate CLI

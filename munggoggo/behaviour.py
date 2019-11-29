@@ -1,4 +1,6 @@
-from __future__ import annotations  # make all type hints be strings and skip evaluating them
+from __future__ import (
+    annotations,
+)  # make all type hints be strings and skip evaluating them
 
 import asyncio
 import inspect
@@ -37,6 +39,7 @@ from subsystem import PubSub, RPC_SubSystem
 
 class BehaviourNotFinishedException(Exception):
     """ """
+
     pass
 
 
@@ -48,15 +51,17 @@ class Behaviour(MyService):
         Outgoing messages can either be broadcast to all listening agents
         or point-to-point sent to one agent
         or sent to a message topic (PubSub pattern)
-
-        TODO: make it abstract class
     """
 
-    def __init__(self, core, *,
-                 beacon: NodeT = None,
-                 loop: asyncio.AbstractEventLoop = None,
-                 binding_keys: list = None,
-                 configure_rpc: bool = False) -> None:
+    def __init__(
+        self,
+        core,
+        *,
+        beacon: NodeT = None,
+        loop: asyncio.AbstractEventLoop = None,
+        binding_keys: list = None,
+        configure_rpc: bool = False,
+    ) -> None:
 
         super().__init__(identity=core.identity, beacon=beacon, loop=loop)
 
@@ -214,7 +219,9 @@ class Behaviour(MyService):
         """ returns mailbox size """
         return self.queue.qsize()
 
-    async def direct_send(self, msg: str, msg_type: str, target: str = None, correlation_id: str = None):
+    async def direct_send(
+        self, msg: str, msg_type: str, target: str = None, correlation_id: str = None
+    ):
         """ Sends message to default exchange, 1:1 communication """
         await self.core.direct_send(msg, msg_type, target, correlation_id)
         # self.agent.traces.append(TraceStoreMessage.from_msg(msg), category=str(self))
@@ -296,6 +303,7 @@ class Behaviour(MyService):
 
 class EmptyBehav(Behaviour):
     """ Do nothing, just overwrite methods."""
+
     async def on_start(self):
         print(f"Starting {self.name} . . .")
 
@@ -310,19 +318,30 @@ class EmptyBehav(Behaviour):
 class SqlBehav(Behaviour):
     """ Stores all messages arriving in mailbox to SQL-DB (sqlite) as json blob """
 
-    def __init__(self, core, *,
-                 beacon: NodeT = None,
-                 loop: asyncio.AbstractEventLoop = None,
-                 binding_keys: list = None,
-                 configure_rpc: bool = False) -> None:
+    def __init__(
+        self,
+        core,
+        *,
+        beacon: NodeT = None,
+        loop: asyncio.AbstractEventLoop = None,
+        binding_keys: list = None,
+        configure_rpc: bool = False,
+    ) -> None:
 
-        super(SqlBehav, self).__init__(core, beacon=beacon, loop=loop, binding_keys=binding_keys,
-                                       configure_rpc=configure_rpc)
+        super(SqlBehav, self).__init__(
+            core,
+            beacon=beacon,
+            loop=loop,
+            binding_keys=binding_keys,
+            configure_rpc=configure_rpc,
+        )
         self.db: Optional[Database] = None
         self.engine: Optional[Engine] = None
         self.metadata: Optional[MetaData] = None
         # TODO: Generalize example
-        self.msg_types: Dict[str, Type[SerializableObject]] = {DemoData.__name__: DemoData}
+        self.msg_types: Dict[str, Type[SerializableObject]] = {
+            DemoData.__name__: DemoData
+        }
 
         # ATTENTION: keep in sync with model.json_data definition !!!
         # allow already serialized json to be inserted in JSON column as text
@@ -337,7 +356,7 @@ class SqlBehav(Behaviour):
             Column("content_type", String(length=100)),
             Column("routing_key", String(length=256)),
             Column("data", Text),
-            extend_existing=True  # allow redefinition to JSON column to send json string
+            extend_existing=True,  # allow redefinition to JSON column to send json string
         )
 
     def add_msg_type(self, msg_type: Type[SerializableObject]):
@@ -364,19 +383,25 @@ class SqlBehav(Behaviour):
                 msg_type = self.msg_types.get(msg_type_key)
 
                 if msg_type:
-                    obj = SerializableObject.deserialize(msg.body.decode(), msg_type=msg_type)
+                    obj = SerializableObject.deserialize(
+                        msg.body.decode(), msg_type=msg_type
+                    )
                     data = {
                         "sender": msg.app_id,
                         "rmq_type": msg.type,
                         "content_type": obj.__class__.__name__,
                         "ts": utcnow(),
                         "routing_key": msg.routing_key,
-                        "data": obj.to_json()
+                        "data": obj.to_json(),
                     }
                     await self.save_to_db(data)
                 else:
-                    self.log.error(f"Unknown message type {msg_type_key} read from topics {self.binding_keys}.")
-                    self.log.error(f"Expected types: {[mtype for mtype in self.msg_types.keys()]}.")
+                    self.log.error(
+                        f"Unknown message type {msg_type_key} read from topics {self.binding_keys}."
+                    )
+                    self.log.error(
+                        f"Expected types: {[mtype for mtype in self.msg_types.keys()]}."
+                    )
                     self.log.error(f"Not saving to DB")
         except WrongMessageFormatException as e:
             # self.log.exception(f"{e}", exc_info=sys.exc_info())

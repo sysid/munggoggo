@@ -22,7 +22,7 @@ class PingBehav(Behaviour):
         if msg:
             print(
                 f"{self.name}: Message: {msg.body.decode()} from: {msg.app_id}, qsize: {self.queue.qsize()}"
-            )  # TODO: log.warning ?!!
+            )
         print(f"{self.name}: Counter: {self.counter}")
         await self.publish(str(self.counter), "ping")
         await asyncio.sleep(
