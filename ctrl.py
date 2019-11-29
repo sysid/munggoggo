@@ -50,7 +50,7 @@ def cli(ctx, debug):
 @click.pass_context
 @coro
 async def send_message(ctx, msg, msg_type, target):
-    async with Ctrl(identity="ctrl") as a:
+    async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
         click.echo(f"Sending type: '{msg_type}' msg: {msg} to {target}")
         await a.direct_send(msg=msg, msg_type=msg_type, target=target)
@@ -63,7 +63,7 @@ async def send_message(ctx, msg, msg_type, target):
 @click.argument("msg_type")
 @coro
 async def broadcast(msg, msg_type):
-    async with Ctrl(identity="ctrl") as a:
+    async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
         click.echo(f"Broadcasting type: '{msg_type}' msg: {msg}")
         await a.fanout_send(msg=msg, msg_type=msg_type)
@@ -76,7 +76,7 @@ async def broadcast(msg, msg_type):
 @click.pass_context
 @coro
 async def list_behaviour(ctx, agent):
-    async with Ctrl(identity="ctrl") as a:
+    async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
         click.echo(f"Listing behaviours of {agent}:")
         obj = ListBehav()
@@ -90,7 +90,7 @@ async def list_behaviour(ctx, agent):
 @click.pass_context
 @coro
 async def list_peers(ctx):
-    async with Ctrl(identity="ctrl") as a:
+    async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
         click.echo(f"Listing peers.")
         peers = await a.list_peers()
@@ -114,7 +114,7 @@ async def target_exists(core: Core, target: str) -> bool:
 @click.pass_context
 @coro
 async def call(ctx, command, target, behav):
-    async with Ctrl(identity="ctrl") as a:
+    async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
 
         if not await target_exists(a, target):
@@ -144,19 +144,27 @@ async def call(ctx, command, target, behav):
 
 @cli.command()
 @click.argument("target")
+@click.option("--limit", "-d")
+@click.option("--sender", "-s")
 @click.pass_context
 @coro
-async def list_traces(ctx, target):
-    async with Ctrl(identity="ctrl") as a:
+async def list_traces(ctx, target, limit, sender):
+    # assert isinstance(limit, int), f"limit must be integer"
+    async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
 
         if not await target_exists(a, target):
             return False
 
-        obj = ListTraceStore()
+        if limit is not None:
+            limit = int(limit)
+        obj = ListTraceStore(app_id=sender, limit=limit,)
 
         result = await a.call(obj.to_rpc(), target=target)
-        click.echo(result.traces)
+        for entry in result.traces:
+            click.echo(entry[1])
+
+        click.echo(f"Total number of records: {len(result.traces)}.")
 
         await asyncio.sleep(0.1)  # required for context cleanup
         print(f"Duration: {datetime.now() - start}")
@@ -180,7 +188,10 @@ if __name__ == "__main__":
     # call(['Stop', 'SqlAgent', "SqlAgent.SqlBehav"])
     # call(['Stop', 'SqlAgent', "SqlBehav"])
     # call(['start', 'SqlAgent', "SqlBehav"])
+
     # list_traces(["SqlAgent"])
+    # list_traces(["SqlAgent", "--limit", 1])
+    # list_traces(["SqlAgent", "--sender", "Ctrl"])
 
     ################################################################################
     # activate CLI
