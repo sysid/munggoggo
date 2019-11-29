@@ -6,13 +6,20 @@ components:
           type: string
       type: object
 info:
-  description: explanation of the api purpose
+  description: ASGI Agent
   title: Example API
   version: '1.0'
 openapi: 3.0.0
 paths:
   /:
-    get: {}
+    get:
+      description: Home
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformInformation'
   /jsonrpc:
     post:
       description: RPC
