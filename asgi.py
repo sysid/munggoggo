@@ -1,22 +1,21 @@
 import asyncio
+import inspect
 import logging
+import sys
 from pathlib import Path
 
-import sys
-
+import click
 import uvicorn
 from marshmallow import Schema, fields
-
-import inspect
-
 from starlette.responses import PlainTextResponse
-
-sys.path.insert(0, str(Path(__file__).parent / 'munggoggo'))
 
 import subsystem
 from asgi_agent import AsgiAgent
 from behaviour import Behaviour
 from core import Core
+
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
 
 logging.getLogger("aio_pika").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
@@ -41,33 +40,31 @@ class PingBehav(Behaviour):
     async def run(self):
         self.counter += 1
         async for msg in self.receive_all():
-            print(f"{self.name}: Message: {msg.body.decode()} from: {msg.app_id} qsize: {self.queue.qsize()}")
-        await self.publish(str(self.counter), 'ping')
-        await asyncio.sleep(
-            0.9
-        )
+            print(
+                f"{self.name}: Message: {msg.body.decode()} from: {msg.app_id} qsize: {self.queue.qsize()}"
+            )
+        await self.publish(str(self.counter), "ping")
+        await asyncio.sleep(0.9)
 
     async def teardown(self):
         print(f"Finished {self.name} . . .")
 
 
 class Agent(Core):
-
     @property
     def behaviour(self) -> Behaviour:
-        return PingBehav(self, binding_keys=['ping'], configure_rpc=True)
+        return PingBehav(self, binding_keys=["ping"], configure_rpc=True)
 
     async def setup(self) -> None:
         await self.add_runtime_dependency(self.behaviour)
 
 
 app = AsgiAgent(
-    agent=Agent(identity="starlette", config=dict(UPDATE_PEER_INTERVAL=1.0)),
-    debug=True
+    agent=Agent(identity="starlette", config=dict(UPDATE_PEER_INTERVAL=1.0)), debug=True
 )
 
 
-@app.route('/hello')
+@app.route("/hello")
 async def hello(request):
     """hello
     ---
@@ -79,14 +76,33 @@ async def hello(request):
                     schema: HelloSchema
     """
     agent = request.app.agent
-    behav = agent.get_behaviour('PingBehav')
-    return PlainTextResponse(f'Hello, world, received already {behav.counter} pings from other agent.')
+    behav = agent.get_behaviour("PingBehav")
+    return PlainTextResponse(
+        f"Hello, world, received already {behav.counter} pings from other agent."
+    )
 
 
-@app.schema('HelloSchema')
+@app.schema("HelloSchema")
 class HelloSchema(Schema):
     answer = fields.Str()
 
 
+@click.command()
+@click.option("--debug", "-d", is_flag=True)
+@click.pass_context
+def run(ctx, debug):
+    loglevel = "info"
+    if debug:
+        loglevel = "debug"
+
+    from mode import Worker
+
+    logging.getLogger("aio_pika").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.INFO)
+    logging.getLogger("mode").setLevel(logging.INFO)
+
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level=loglevel)
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    run()

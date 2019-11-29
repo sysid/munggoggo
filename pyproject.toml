@@ -2,7 +2,7 @@
 requires = ["setuptools", "wheel"]
 
 [tool.autohooks]
-mode = "pipenv"
+mode = "pythonpath"
 pre-commit = ["autohooks.plugins.black", "autohooks.plugins.isort"]
 
 [tool.isort]

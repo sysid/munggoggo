@@ -1,10 +1,19 @@
 Agents
 ============
-A (growing) set of agents is being provided to form a collaborating agent system.
+A (growing) set of agents is being provided to form a collaborating agent system. All agents can be started in
+debugging mode via debug flag ``-d``.
 
 Welcome handshake:
 
 Whenever an agents starts it sends a PING broadcast to all peers. They respond with the required PONG response.
+
+Ping Agent
+-----------------
+Simple agent which broadcasts PING messages.
+
+.. code-block:: shell
+
+   $ ./ping_agent.py -d
 
 Control Agent
 -----------------
@@ -13,7 +22,7 @@ being used, e.g. start/stop of agent behaviour (call).
 
 .. code-block:: shell
 
-   $ python ctrl.py --help
+   $ ./ctrl.py --help
 
    Usage: ctrl.py [OPTIONS] COMMAND [ARGS]...
 
@@ -43,7 +52,7 @@ Out of the box it comes with a sqlite database in the project root: ``example.db
 
 .. code-block:: shell
 
-   $ python historian.py
+   $ ./historian.py
 
 To check that entries are stored in DB:
 
@@ -65,7 +74,7 @@ An ASGI agent provides several WEB endpoints.
 
 Every ASGI agent provides full agent functionality::
 
-    $ python asgi.py
+    $ ./asgi.py
 
 This exposes the following endpoints::
 

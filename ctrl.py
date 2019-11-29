@@ -1,19 +1,22 @@
+#!/usr/bin/env python
+
 import asyncio
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 
 import click
-import sys
-from twpy import coro
-
-sys.path.insert(0, str(Path(__file__).parent / 'munggoggo'))
 
 from behaviour import Behaviour
 from core import Core
 from messages import ListBehav, ManageBehav
-
+from twpy import coro
 from utils import setup_logging
+
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
+
 
 _log = logging.getLogger()
 setup_logging(level=logging.WARNING)
@@ -27,14 +30,14 @@ LOGGING_LEVEL = logging.WARNING
 class Ctrl(Core):
     @property
     def behaviour(self) -> Behaviour:
-        return Behaviour(self, binding_keys=['system'], configure_rpc=True)
+        return Behaviour(self, binding_keys=["system"], configure_rpc=True)
 
     async def setup(self) -> None:
         await self.add_runtime_dependency(self.behaviour)
 
 
 @click.group()
-@click.option('--debug', '-d', is_flag=True)
+@click.option("--debug", "-d", is_flag=True)
 @click.pass_context
 def cli(ctx, debug):
     global LOGGING_LEVEL
@@ -43,9 +46,9 @@ def cli(ctx, debug):
 
 
 @cli.command()
-@click.argument('msg')
-@click.argument('msg_type')
-@click.argument('target')
+@click.argument("msg")
+@click.argument("msg_type")
+@click.argument("target")
 @click.pass_context
 @coro
 async def send_message(ctx, msg, msg_type, target):
@@ -58,8 +61,8 @@ async def send_message(ctx, msg, msg_type, target):
 
 
 @cli.command()
-@click.argument('msg')
-@click.argument('msg_type')
+@click.argument("msg")
+@click.argument("msg_type")
 @coro
 async def broadcast(msg, msg_type):
     async with Ctrl(identity="ctrl") as a:
@@ -71,7 +74,7 @@ async def broadcast(msg, msg_type):
 
 
 @cli.command()
-@click.argument('agent')
+@click.argument("agent")
 @click.pass_context
 @coro
 async def list_behaviour(ctx, agent):
@@ -99,30 +102,28 @@ async def list_peers(ctx):
 
 
 @cli.command()
-@click.argument('command')
-@click.argument('target')
-@click.argument('behav')
+@click.argument("command")
+@click.argument("target")
+@click.argument("behav")
 @click.pass_context
 @coro
 async def call(ctx, command, target, behav):
     async with Ctrl(identity="ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
-        peers = [peer.get('name') for peer in await a.list_peers()]
+        peers = [peer.get("name") for peer in await a.list_peers()]
         if target not in peers:
             click.echo(f"Invalid target: {target}. Choose one of: {peers}.")
             return False
         click.echo(f"Sending command: '{command}' to {target}:{behav}")
-        obj = ManageBehav(
-            behav=behav,
-            command=None,
-        )
-        if command in ['Stop', 'stop']:
+        obj = ManageBehav(behav=behav, command=None,)
+        if command in ["Stop", "stop"]:
             obj.command = "stop"
-        elif command in ['Start', 'start']:
+        elif command in ["Start", "start"]:
             obj.command = "start"
         else:
             click.echo(f"Invalid command.")
             click.echo(f"Expected one of [start, stop]")
+            return False
 
         result = await a.call(obj.to_rpc(), target=target)
         click.echo(f"rpc result: {result}")
@@ -133,10 +134,11 @@ async def call(ctx, command, target, behav):
 
 if __name__ == "__main__":
     """
-    python ctrl.py 'xxx' "type" "agent2" 
-    python ctrl.py broadcast '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}' "xx"
+    Examples:
+    
+    python ctrl.py broadcast '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}' "CUSTOM"
     python ctrl.py list-behaviour SqlAgent
-    python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo2\", \"date\": 1546300800.0}"}' "xx" SqlAgent
+    python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo2\", \"date\": 1546300800.0}"}' "CUSTOM" SqlAgent
     python ctrl.py call start SqlAgent SqlAgent.SqlBehav
     python ctrl.py call start SqlAgent SqlBehav
     """

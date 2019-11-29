@@ -1,13 +1,14 @@
-import asyncio
+#!/usr/bin/env python
+
 import logging
-from pathlib import Path
-
 import sys
-
-sys.path.insert(0, str(Path(__file__).parent / 'munggoggo'))
+from pathlib import Path
 
 from behaviour import Behaviour
 from core import Core
+
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
 
 
 class SubscribeBehav(Behaviour):
@@ -23,24 +24,23 @@ class SubscribeBehav(Behaviour):
         print(f"Finished {self.name} . . .")
 
 
-
 class Agent2(Core):
     @property
     def behaviour(self) -> Behaviour:
-        return SubscribeBehav(self, binding_keys=['ping'])
+        return SubscribeBehav(self, binding_keys=["ping"])
 
     async def setup(self) -> None:
         await self.add_runtime_dependency(self.behaviour)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from mode import Worker
+
     logging.getLogger("aio_pika").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.INFO)
 
     worker = Worker(
-        Agent2(identity='agent2'),
+        Agent2(identity="agent2"),
         loglevel="info",
         logfile=None,
         daemon=True,
@@ -48,4 +48,3 @@ if __name__ == '__main__':
     )
 
     worker.execute_from_commandline()
-    # Worker(Agent2(idetity='agent2'), loglevel="info").execute_from_commandline()

@@ -1,15 +1,19 @@
+#!/usr/bin/env python
+
 import logging
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent / 'munggoggo'))
+import click
 
 from behaviour import Behaviour, SqlBehav
 from core import Core
 
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
+
 
 class SqlAgent(Core):
-
     @property
     def behaviour(self) -> Behaviour:
         topics = ["x.y", "x.z", "a.#"]
@@ -20,7 +24,14 @@ class SqlAgent(Core):
         await self.add_runtime_dependency(self.behaviour)
 
 
-if __name__ == '__main__':
+@click.command()
+@click.option("--debug", "-d", is_flag=True)
+@click.pass_context
+def run(ctx, debug):
+    loglevel = "info"
+    if debug:
+        loglevel = "debug"
+
     from mode import Worker
 
     logging.getLogger("aio_pika").setLevel(logging.WARNING)
@@ -28,11 +39,14 @@ if __name__ == '__main__':
     logging.getLogger("mode").setLevel(logging.INFO)
 
     worker = Worker(
-        SqlAgent(identity='SqlAgent'),
-        loglevel="info",
+        SqlAgent(identity="SqlAgent"),
+        loglevel=loglevel,
         logfile=None,
         daemon=True,
         redirect_stdouts=False,
     )
-
     worker.execute_from_commandline()
+
+
+if __name__ == "__main__":
+    run()
