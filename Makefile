@@ -21,6 +21,7 @@ all: check clean docs bump
 	@echo "-M- commit amend README.rst"
 	@echo "-M- use <release> to switch to 'prod'"
 	@echo "--------------------------------------------------------------------------------"
+	@git add .
 	@git status
 
 unit:

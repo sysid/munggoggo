@@ -8,15 +8,13 @@ from pathlib import Path
 
 import click
 
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
 from behaviour import Behaviour
 from core import Core
 from messages import ListBehav, ManageBehav
 from twpy import coro
 from utils import setup_logging
-
-sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
-
-
 
 _log = logging.getLogger()
 setup_logging(level=logging.WARNING)

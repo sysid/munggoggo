@@ -7,11 +7,10 @@ from pathlib import Path
 
 import click
 
-from behaviour import Behaviour
-from core import Core
-
 sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
 
+from behaviour import Behaviour
+from core import Core
 
 
 class PingBehav(Behaviour):

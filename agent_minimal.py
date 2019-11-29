@@ -8,14 +8,13 @@ from pathlib import Path
 
 from mode import Worker
 
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
 from behaviour import Behaviour
 from core import Core
 
-sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
-
 logging.getLogger("aio_pika").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.INFO)
-
 
 
 class Agent(Core):

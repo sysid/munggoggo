@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import asyncio
 import inspect
 import logging
@@ -9,13 +11,12 @@ import uvicorn
 from marshmallow import Schema, fields
 from starlette.responses import PlainTextResponse
 
+sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
+
 import subsystem
 from asgi_agent import AsgiAgent
 from behaviour import Behaviour
 from core import Core
-
-sys.path.insert(0, str(Path(__file__).parent / "munggoggo"))
-
 
 logging.getLogger("aio_pika").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
