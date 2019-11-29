@@ -1,4 +1,5 @@
 import importlib
+import json
 from json import JSONDecodeError
 
 import sys
@@ -17,6 +18,10 @@ from dataclasses_json import dataclass_json
 _log = logging.getLogger(__name__)
 
 """ Message Definition and Serialization:
+
+    Self describing data serialization format for IO as two stage serialization
+    1. serialize payload (dataclass with dataclass_json decorator)
+    2. wrap result into RPC dataclass with two fields: {c_type: str, c_data: json_string}
 
     Caveat:
     As specified in the datetime docs, if your datetime object is naive, it will assume your system local timezone 
@@ -42,8 +47,8 @@ _log = logging.getLogger(__name__)
         expiration: expiration in seconds (or datetime or timedelta)
         message_id: message id
         timestamp: timestamp
-        type: type
-        user_id: user id -> (guest)
+        type: type  -> (RmqMessageTypes: not rmq relevant, for application to communicate semantics)
+        user_id: user id -> (rmq user, e.g. guest)
         app_id: app id -> (sender)
 """
 # dataclass with dataclass_json decorator
@@ -57,6 +62,17 @@ def convert_to_utc(obj):
             dt = getattr(obj, field.name)
             setattr(obj, field.name, dt.astimezone(pytz.UTC))
     return obj
+
+
+class RmqMessageTypes(Enum):
+    """ Defines the RMQ messages which are handled by system
+
+        User can define arbitrary message types by using the
+        msg_type parameter of fanout_send/direct_send methods.
+    """
+    CONTROL = 0
+    RPC = 1
+    PUBSUB = 2
 
 
 class RpcMessageTypes(Enum):
@@ -99,6 +115,20 @@ class RpcObject:
         rpc_obj = class_.from_json(rpc_msg.c_data)
         rpc_obj = convert_to_utc(rpc_obj)
         return RpcMessageTypes(rpc_msg.request_type), rpc_obj
+
+
+def to_rpc(obj: SerializableDataclass) -> str:
+    """ Creates self describing serialized json RPC object """
+    return RpcMessage(c_type=obj.__class__.__name__, c_data=obj.to_json()).to_json()
+
+
+def from_rpc(msg: str) -> SerializableDataclass:
+    rpc_msg = RpcMessage.from_json(msg)
+
+    module = importlib.import_module("messages")
+    class_ = getattr(module, rpc_msg.c_type)
+    rpc_obj = class_.from_json(rpc_msg.c_data)
+    return rpc_obj
 
 
 @dataclass_json
@@ -153,19 +183,6 @@ class ListTraceStore(RpcObject):
 @dataclass()
 class Shutdown(RpcObject):
     result: str = ""
-
-
-def to_rpc(obj: SerializableDataclass) -> str:
-    return RpcMessage(c_type=obj.__class__.__name__, c_data=obj.to_json()).to_json()
-
-
-def from_rpc(msg: str) -> SerializableDataclass:
-    rpc_msg = RpcMessage.from_json(msg)
-
-    module = importlib.import_module("messages")
-    class_ = getattr(module, rpc_msg.c_type)
-    rpc_obj = class_.from_json(rpc_msg.c_data)
-    return rpc_obj
 
 
 # @api.schema("ExampleMethodParameter")
@@ -271,15 +288,17 @@ class SerializableObject:
     def extract_serialized_obj(msg):
         try:
             serialized_obj = SerializedObject.from_json(msg)
+            return serialized_obj
         except (KeyError, JSONDecodeError) as e:
-            _log.exception(f"Wrong message format: {msg}", exc_info=sys.exc_info())
+            _log.error(f"Wrong message format: {msg}. Expected {{c_type: str, c_data: str}}.",
+                       exc_info=sys.exc_info())
             raise WrongMessageFormatException(e).with_traceback(sys.exc_info()[2])
-        return serialized_obj
+            # serialized_obj = SerializedObject(c_type="unknown", c_data="")
 
     @classmethod
     def extract_type(cls, msg: str) -> str:
-        serialized_obj =  cls.extract_serialized_obj(msg)
-        return serialized_obj.c_type
+        serialized_obj = cls.extract_serialized_obj(msg)
+        return "NoneType" if serialized_obj is None else serialized_obj.c_type
 
 
 @dataclass_json
@@ -322,5 +341,3 @@ class CoreStatus:
 @dataclass
 class PongControl(SerializableObject):
     status: CoreStatus
-
-

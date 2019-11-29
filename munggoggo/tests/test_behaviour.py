@@ -123,7 +123,7 @@ class TestSqlBehaviour:
         await sql_behav.publish(msg, "x.y")
         await asyncio.sleep(0.1)  # relinquish cpu
 
-        # then message must be written in database
+        # then message must not be written in database due to wrong format
         query = json_data.select()
         rows = await sql_behav.db.fetch_all(query=query)
 

@@ -80,20 +80,22 @@ async def list_behaviour(ctx, agent):
         result = await a.call(obj.to_rpc(), agent)
         print(result)
         await asyncio.sleep(0.1)  # required for context cleanup
+        print(f"Duration: {datetime.now() - start}")
 
 # TODO list_agents
 
 if __name__ == "__main__":
     """
     python ctrl.py 'xxx' "type" "agent2" 
+    python ctrl.py broadcast '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}' "xx"
     """
     start = datetime.now()
-    # list_behaviour(['agent2'])
+    # list_behaviour(['SqlAgent'])
     # broadcast(['{"command": "presence"}', "control", "--debug", True])
     # send_message(['{"command": "list_behaviour"}', "control", "agent1"])
 
     ################################################################################
     # activate CLI
     ################################################################################
-    cli(obj={})
+    cli(obj=dict(start=start))
     print(f"Duration: {datetime.now() - start}")

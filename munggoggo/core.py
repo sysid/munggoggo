@@ -40,8 +40,9 @@ class MyService(Service):
     """Base class for agent and behaviours
         Defines async service framework.
     """
+
     def __init__(
-        self, identity, *, beacon: NodeT = None, loop: asyncio.AbstractEventLoop = None
+            self, identity, *, beacon: NodeT = None, loop: asyncio.AbstractEventLoop = None
     ) -> None:
         super(MyService, self).__init__(beacon=beacon, loop=loop)
 
@@ -61,14 +62,14 @@ class Core(MyService):
     """
 
     def __init__(
-        self,
-        *,
-        identity=None,
-        config=None,
-        clock=None,
-        channel_number: int = None,
-        beacon: NodeT = None,
-        loop: asyncio.AbstractEventLoop = None,
+            self,
+            *,
+            identity=None,
+            config=None,
+            clock=None,
+            channel_number: int = None,
+            beacon: NodeT = None,
+            loop: asyncio.AbstractEventLoop = None,
     ) -> None:
         identity = identity or str(uuid.uuid4())
         super().__init__(identity=identity, beacon=beacon, loop=loop)
@@ -107,10 +108,10 @@ class Core(MyService):
         return self
 
     async def __aexit__(
-        self,
-        exc_type: Type[BaseException] = None,
-        exc_val: BaseException = None,
-        exc_tb: TracebackType = None,
+            self,
+            exc_type: Type[BaseException] = None,
+            exc_val: BaseException = None,
+            exc_tb: TracebackType = None,
     ) -> Optional[bool]:
         await super(Core, self).__aexit__()
         return None
@@ -291,15 +292,15 @@ class Core(MyService):
         return result
 
     async def direct_send(
-        self,
-        msg: str,
-        msg_type: str,
-        target: str = None,
-        correlation_id: str = None,
-        headers: dict = None,
+            self,
+            msg: str,
+            msg_type: RmqMessageTypes.name,
+            target: str = None,
+            correlation_id: str = None,
+            headers: dict = None,
     ) -> None:
         if target is None:
-            target = self.identity  # loopback send
+            target = self.identity  # loopback send to itself
         await self.channel.default_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
             routing_key=target,
@@ -310,7 +311,7 @@ class Core(MyService):
         )
 
     async def fanout_send(
-        self, msg: str, msg_type: str, correlation_id: str = None, headers: dict = None
+            self, msg: str, msg_type: RmqMessageTypes.name, correlation_id: str = None, headers: dict = None
     ) -> None:
         await self.fanout_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
@@ -323,7 +324,7 @@ class Core(MyService):
         """ Publishes message to topic """
         await self.topic_exchange.publish(
             message=self._create_message(
-                msg, msg_type="pubsub", correlation_id=None, headers=headers
+                msg, msg_type=RmqMessageTypes.PUBSUB.name, correlation_id=None, headers=headers
             ),
             routing_key=routing_key,
             timeout=None,
@@ -331,7 +332,7 @@ class Core(MyService):
         self.log.debug(f"Sent: {msg}, routing_key: {routing_key}")
 
     def _create_message(
-        self, msg: str, msg_type: str, correlation_id: str = None, headers: dict = None
+            self, msg: str, msg_type: RmqMessageTypes.name, correlation_id: str = None, headers: dict = None
     ) -> Message:
         return Message(
             content_type="application/json",
@@ -345,7 +346,11 @@ class Core(MyService):
         )
 
     async def on_message(self, message: IncomingMessage):
+        """ Handle incoming messages
 
+            Well defined types (RmqMessageTypes) are sent to system handlers,
+            all others are enqueued to behaviour mailbox for user handling.
+        """
         # If context processor will catch an exception, the message will be returned to the queue.
         async with message.process():
             self.log.debug(f"Received (info/body:")

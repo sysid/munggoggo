@@ -19,7 +19,7 @@ from async_timeout import timeout
 from marshmallow import Schema, fields
 
 from messages import RpcMessageTypes, RpcMessage, Pong, RpcError, RpcObject, Ping, ListBehav, ManageBehav, \
-    ListTraceStore, Shutdown, ControlMessage, SerializableObject, PongControl, PingControl
+    ListTraceStore, Shutdown, ControlMessage, SerializableObject, PongControl, PingControl, RmqMessageTypes
 from mode.utils.logging import CompositeLogger, get_logger
 from settings import TIMEOUT
 
@@ -198,11 +198,6 @@ class RpcHandler(SystemHandler):
             "/".join(base.__name__ for base in self.__class__.__bases__),
             self.__class__.__name__,
         )
-
-
-class RmqMessageTypes(Enum):
-    CONTROL = 0
-    RPC = 1
 
 
 class Registry(object):
