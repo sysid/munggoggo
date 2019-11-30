@@ -10,9 +10,11 @@ from click.testing import CliRunner
 
 from ctrl import list_peers, cli
 
-"""
-Cannot resolve at end of every test:
+""" ATTENTION:
+Cannot resolve asyncio error at end of every test:
+
 asyncio.streams.IncompleteReadError: 0 bytes read on a total of 1 expected bytes
+
 has got nothing to do with timing of closedown of SqlAgent
 """
 
@@ -33,6 +35,44 @@ def start_historian(request):
             time.sleep(2)
             yield
             proc.kill()
+
+
+# must run first due to side effects in SqlAgent.traces
+def test_list_traces(caplog):
+    caplog.set_level(logging.DEBUG)
+
+    start = datetime.now()
+    runner = CliRunner()
+
+    # given
+
+    # when list-traces is called
+    result = runner.invoke(cli, ["list-traces", "SqlAgent"], obj=dict(start=start))
+
+    # then 4 records should show up
+    expected = "Total number of records: 7."
+    assert result.exit_code == 0
+    assert expected in result.output
+
+    # when list-traces is called
+    result = runner.invoke(
+        cli, ["list-traces", "SqlAgent", "--limit", 1], obj=dict(start=start)
+    )
+
+    # then 1 records should show up
+    expected = "Total number of records: 1."
+    assert result.exit_code == 0
+    assert expected in result.output
+
+    # when list-traces is called
+    result = runner.invoke(
+        cli, ["list-traces", "SqlAgent", "--sender", "Ctrl"], obj=dict(start=start)
+    )
+
+    # then 1 records should show up
+    expected = "Total number of records: 6."
+    assert result.exit_code == 0
+    assert expected in result.output
 
 
 def test_list_peers():
@@ -97,7 +137,7 @@ def test_send_message(caplog):
     assert result.exit_code == 0
 
 
-def test_call_stop(caplog):
+def test_call_stop_start(caplog):
     caplog.set_level(logging.DEBUG)
 
     start = datetime.now()
@@ -110,7 +150,37 @@ def test_call_stop(caplog):
         cli, ["call", "stop", "SqlAgent", "SqlBehav"], obj=dict(start=start)
     )
 
-    # then only self/Ctrl must be found
+    # then stop message must show in log output
     expected = r"result='SqlAgent.SqlBehav stopped: init'"
+    assert result.exit_code == 0
+    assert expected in result.output
+
+    # when RPC stop is called when behaviour is already stopped
+    result = runner.invoke(
+        cli, ["call", "stop", "SqlAgent", "SqlBehav"], obj=dict(start=start)
+    )
+
+    # then stop message must show in log output
+    expected = r"result='SqlAgent.SqlBehav stopped: init'"
+    assert result.exit_code == 0
+    assert expected in result.output
+
+    # when RPC start is called
+    result = runner.invoke(
+        cli, ["call", "start", "SqlAgent", "SqlBehav"], obj=dict(start=start)
+    )
+
+    # then start message must show in log output
+    expected = r"result='SqlAgent.SqlBehav started.'"
+    assert result.exit_code == 0
+    assert expected in result.output
+
+    # when RPC start is called when behaviour is already running
+    result = runner.invoke(
+        cli, ["call", "start", "SqlAgent", "SqlBehav"], obj=dict(start=start)
+    )
+
+    # then start message must show in log output
+    expected = r"result='SqlAgent.SqlBehav already running.'"
     assert result.exit_code == 0
     assert expected in result.output

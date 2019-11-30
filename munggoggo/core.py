@@ -316,11 +316,13 @@ class Core(MyService):
         """ Sends message to default exchange """
         if target is None:
             target = self.identity  # loopback send to itself
+
         await self.channel.default_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
             routing_key=target,
             timeout=None,
         )
+        self._add_trace_outgoing(correlation_id, headers, msg, msg_type, target, target)
         self.log.debug(
             f"Sent message: {msg}, routing_key: {self.identity}, type: {msg_type}"
         )
@@ -333,10 +335,14 @@ class Core(MyService):
         headers: dict = None,
     ) -> None:
         """ Sends message to fanout exchange """
+
         await self.fanout_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
             routing_key=BINDING_KEY_FANOUT,
             timeout=None,
+        )
+        self._add_trace_outgoing(
+            correlation_id, headers, msg, msg_type, "fanout", BINDING_KEY_FANOUT
         )
         self.log.debug(f"Sent fanout message: {msg}, routing_key: {BINDING_KEY_FANOUT}")
 
@@ -351,6 +357,9 @@ class Core(MyService):
             ),
             routing_key=routing_key,
             timeout=None,
+        )
+        self._add_trace_outgoing(
+            None, headers, msg, RmqMessageTypes.PUBSUB.name, "publish", routing_key
         )
         self.log.debug(f"Sent: {msg}, routing_key: {routing_key}")
 
@@ -370,6 +379,21 @@ class Core(MyService):
             user_id="guest",
             headers=headers,
             correlation_id=correlation_id,
+        )
+
+    def _add_trace_outgoing(
+        self, correlation_id, headers, msg, msg_type, target, routing_key
+    ):
+        self.traces.append(
+            TraceStoreMessage(
+                body=msg,
+                headers=headers,
+                correlation_id=correlation_id,
+                type=msg_type,
+                target=target,
+                routing_key=routing_key,
+            ),
+            category="outgoing",
         )
 
     async def on_message(self, message: IncomingMessage):

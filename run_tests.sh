@@ -5,3 +5,4 @@ set -x
 package=munggoggo
 
 pipenv run python -m pytest --cov=$package munggoggo/tests
+pipenv run python -m pytest --cov=ctrl test_ctrl.py

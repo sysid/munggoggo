@@ -198,26 +198,28 @@ class Shutdown(RpcObject):
 @dataclass_json
 @dataclass()
 class TraceStoreMessage:
-    body: str
-    body_size: int
-    headers: dict  # rmq: headers_raw
-    content_type: str
-    content_encoding: str
-    delivery_mode: int
-    priority: int
-    correlation_id: str
-    reply_to: str
-    expiration: datetime
-    message_id: str
-    timestamp: time
-    user_id: str
-    app_id: str
-    cluster_id: str
-    consumer_tag: str
-    delivery_tag: int
-    exchange: str
-    redelivered: bool
-    routing_key: str
+    body: str = ""
+    body_size: int = 0
+    headers: dict = None  # rmq: headers_raw
+    content_type: str = "application/json"
+    content_encoding: str = ""
+    delivery_mode: int = 0
+    priority: int = 0
+    correlation_id: str = ""
+    reply_to: str = ""
+    expiration: datetime = None
+    message_id: str = ""
+    timestamp: time = None
+    type: str = ""
+    user_id: str = ""
+    app_id: str = ""
+    target: str = ""
+    cluster_id: str = ""
+    consumer_tag: str = ""
+    delivery_tag: int = 0
+    exchange: str = ""
+    redelivered: bool = False
+    routing_key: str = ""
 
     @staticmethod
     def from_msg(msg: IncomingMessage):
@@ -234,6 +236,7 @@ class TraceStoreMessage:
             expiration=msg.expiration,
             message_id=msg.message_id,
             timestamp=time.mktime(msg.timestamp),
+            type=msg.type,
             user_id=msg.user_id,
             app_id=msg.app_id,
             cluster_id=msg.cluster_id,

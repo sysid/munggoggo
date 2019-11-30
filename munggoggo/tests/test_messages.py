@@ -17,6 +17,7 @@ from messages import (
     RpcObject,
     SerializableObject,
     ServiceStatus,
+    TraceStoreMessage,
     WrongMessageFormatException,
     from_rpc,
     to_rpc,
@@ -45,6 +46,23 @@ m = {
     "routing_key": "twagent",
     "body": "xxxxx".encode(),
 }
+
+
+def test_TraceStoreMessage():
+
+    # given a valid incoming message format
+    # when generate TraceStoreMessage
+    msg = TraceStoreMessage(**m)
+
+    # then result must be instance of TraceStoreMessage
+    assert isinstance(msg, TraceStoreMessage)
+
+    # given a empty incoming message format
+    # when generate TraceStoreMessage
+    msg = TraceStoreMessage()
+
+    # then result must be instance of TraceStoreMessage
+    assert isinstance(msg, TraceStoreMessage)
 
 
 def test_rpc_wrap():
