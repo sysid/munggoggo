@@ -9,7 +9,7 @@ MAKE          = make
 
 # Put it first so that "make" without argument is like "make help".
 help:
-	@echo "$(MAKE) [all,docs,clean,bump,release]"
+	@echo "$(MAKE) [all,docs,clean,bump,release,frontend]"
 
 default: all
 
@@ -37,6 +37,7 @@ clean:
 	@echo "Cleaning up..."
 	#git clean -Xdf
 	rm -rf docs/build
+	rm -rf static/*
 
 bump: check
 	@echo "Bumping part: $(part)"
@@ -54,3 +55,8 @@ release:
 
 check:
 	@[ "${part}" ] || ( echo "-E- bump2version <part> is not set"; exit 1 )
+
+frontend: check
+	@echo "building and installing frontend"
+	./scripts/install_frontend.sh build
+	./scripts/install_frontend.sh install

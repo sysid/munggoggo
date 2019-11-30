@@ -1,5 +1,10 @@
 components:
   schemas:
+    HelloSchema:
+      properties:
+        answer:
+          type: string
+      type: object
     PlatformInformation:
       properties:
         name:
@@ -20,6 +25,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlatformInformation'
+  /hello:
+    get:
+      description: Hello
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/HelloSchema'
   /jsonrpc:
     post:
       description: RPC
