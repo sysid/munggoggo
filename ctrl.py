@@ -38,6 +38,7 @@ class Ctrl(Core):
 @click.option("--debug", "-d", is_flag=True)
 @click.pass_context
 def cli(ctx, debug):
+    ctx.ensure_object(dict)
     global LOGGING_LEVEL
     if debug:
         LOGGING_LEVEL = logging.DEBUG
@@ -55,7 +56,7 @@ async def send_message(ctx, msg, msg_type, target):
         click.echo(f"Sending type: '{msg_type}' msg: {msg} to {target}")
         await a.direct_send(msg=msg, msg_type=msg_type, target=target)
         await asyncio.sleep(0.1)  # required for context cleanup
-        print(f"Duration: {datetime.now() - start}")
+        # print(f"Duration: {datetime.now() - start}")
 
 
 @cli.command()
@@ -68,7 +69,7 @@ async def broadcast(msg, msg_type):
         click.echo(f"Broadcasting type: '{msg_type}' msg: {msg}")
         await a.fanout_send(msg=msg, msg_type=msg_type)
         await asyncio.sleep(0.1)  # required for context cleanup
-        print(f"Duration: {datetime.now() - start}")
+        # print(f"Duration: {datetime.now() - start}")
 
 
 @cli.command()
@@ -83,7 +84,7 @@ async def list_behaviour(ctx, agent):
         result = await a.call(obj.to_rpc(), agent)
         print(result)
         await asyncio.sleep(0.1)  # required for context cleanup
-        print(f"Duration: {datetime.now() - start}")
+        # print(f"Duration: {datetime.now() - start}")
 
 
 @cli.command()
@@ -96,7 +97,7 @@ async def list_peers(ctx):
         peers = await a.list_peers()
         click.echo(f"{[peer.get('name') for peer in peers]}")
         await asyncio.sleep(0.1)  # required for context cleanup
-        print(f"Duration: {datetime.now() - start}")
+        # print(f"Duration: {datetime.now() - start}")
 
 
 async def target_exists(core: Core, target: str) -> bool:
@@ -139,7 +140,7 @@ async def call(ctx, command, target, behav):
         click.echo(f"rpc result: {result}")
 
         await asyncio.sleep(0.1)  # required for context cleanup
-        print(f"Duration: {datetime.now() - start}")
+        # print(f"Duration: {datetime.now() - start}")
 
 
 @cli.command()
@@ -167,7 +168,7 @@ async def list_traces(ctx, target, limit, sender):
         click.echo(f"Total number of records: {len(result.traces)}.")
 
         await asyncio.sleep(0.1)  # required for context cleanup
-        print(f"Duration: {datetime.now() - start}")
+        # print(f"Duration: {datetime.now() - start}")
 
 
 if __name__ == "__main__":
@@ -181,10 +182,17 @@ if __name__ == "__main__":
     python ctrl.py call start SqlAgent SqlBehav
     """
     start = datetime.now()
+
+    # cli(['-d', 'list-peers'], obj=dict(start=start))
     # list_peers([])
+
     # list_behaviour(['SqlAgent'])
-    # broadcast(['{"command": "presence"}', "control", "--debug", True])
-    # send_message(['{"command": "list_behaviour"}', "control", "agent1"])
+
+    # broadcast(['{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}', "CUSTOM"])
+    # broadcast(['wrong format', "CUSTOM"])
+
+    # send_message([r'{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}', "CUSTOM", "SqlAgent"])
+
     # call(['Stop', 'SqlAgent', "SqlAgent.SqlBehav"])
     # call(['Stop', 'SqlAgent', "SqlBehav"])
     # call(['start', 'SqlAgent', "SqlBehav"])

@@ -293,7 +293,6 @@ class SerializableObject:
                     return obj
 
             obj = msg_type.from_json(serialized_obj.c_data)
-
             obj = convert_to_utc(obj)
         return obj
 
