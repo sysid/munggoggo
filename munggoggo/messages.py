@@ -76,6 +76,7 @@ class RmqMessageTypes(Enum):
         User can define arbitrary message types by using the
         msg_type parameter of fanout_send/direct_send methods.
     """
+
     CONTROL = 0
     RPC = 1
     PUBSUB = 2
@@ -104,10 +105,7 @@ class RpcMessage:
 @dataclass()
 class RpcObject:
     def to_rpc(self, rt: RpcMessageTypes = None) -> str:
-        rpc_message = RpcMessage(
-            c_type=self.__class__.__name__,
-            c_data=self.to_json()
-        )
+        rpc_message = RpcMessage(c_type=self.__class__.__name__, c_data=self.to_json())
         if rt is not None:
             rpc_message.request_type = rt
         return rpc_message.to_json()
@@ -196,6 +194,7 @@ class Shutdown(RpcObject):
 #     x = fields.Float()
 #     y = fields.Float()
 
+
 @dataclass_json
 @dataclass()
 class TraceStoreMessage:
@@ -265,29 +264,37 @@ class SerializableObject:
         """ Serializes dataclass including type into SerializedObject """
         obj = SerializedObject(
             c_type=self.__class__.__name__,
-            c_data=self.to_json()  # method from dataclass_json
+            c_data=self.to_json(),  # method from dataclass_json
         )
 
         return obj.to_json()
 
     @staticmethod
-    def deserialize(msg: str, msg_type: Type['SerializableObject'] = None) -> SerializableDataclass:
+    def deserialize(
+        msg: str, msg_type: Type["SerializableObject"] = None
+    ) -> SerializableDataclass:
         """ Deserializes SerializedObject into correct type """
 
+        obj = None
         serialized_obj = SerializableObject.extract_serialized_obj(msg)
 
         # load msg_type from module messages.py for deserialization
-        if not msg_type:
-            module = importlib.import_module("messages")
-            try:
-                msg_type = getattr(module, serialized_obj.c_type)
-            except AttributeError as e:
-                _log.exception(f"Object type unknown: {serialized_obj.c_type}.", exc_info=sys.exc_info())
-                raise WrongMessageFormatException(e).with_traceback(sys.exc_info()[2])
+        if serialized_obj is not None:
+            if not msg_type:
+                module = importlib.import_module("messages")
+                try:
+                    msg_type = getattr(module, serialized_obj.c_type)
+                except AttributeError as e:
+                    _log.error(
+                        f"Object type unknown: {serialized_obj.c_type}.",
+                        exc_info=sys.exc_info(),
+                    )
+                    # raise WrongMessageFormatException(e).with_traceback(sys.exc_info()[2])
+                    return obj
 
-        obj = msg_type.from_json(serialized_obj.c_data)
+            obj = msg_type.from_json(serialized_obj.c_data)
 
-        obj = convert_to_utc(obj)
+            obj = convert_to_utc(obj)
         return obj
 
     @staticmethod
@@ -296,10 +303,12 @@ class SerializableObject:
             serialized_obj = SerializedObject.from_json(msg)
             return serialized_obj
         except (KeyError, JSONDecodeError) as e:
-            _log.error(f"Wrong message format: {msg}. Expected {{c_type: str, c_data: str}}.",
-                       exc_info=sys.exc_info())
-            raise WrongMessageFormatException(e).with_traceback(sys.exc_info()[2])
-            # serialized_obj = SerializedObject(c_type="unknown", c_data="")
+            _log.error(
+                f"Wrong message format: {msg}. Expected {{c_type: str, c_data: str}}.",
+                exc_info=sys.exc_info(),
+            )
+            # raise WrongMessageFormatException(e).with_traceback(sys.exc_info()[2])
+            # return SerializedObject(c_type="NoneTypeOrWrongMessageFormat", c_data="")
 
     @classmethod
     def extract_type(cls, msg: str) -> str:

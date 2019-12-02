@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -5,52 +6,71 @@ import pytest
 import pytz
 from dataclasses_json import dataclass_json
 
-from messages import Ping, to_rpc, from_rpc, RpcObject, DemoObj, RpcMessage, RpcMessageTypes, SerializableObject, \
-    DemoData, WrongMessageFormatException, ServiceStatus, CoreStatus, PongControl
+from messages import (
+    CoreStatus,
+    DemoData,
+    DemoObj,
+    Ping,
+    PongControl,
+    RpcMessage,
+    RpcMessageTypes,
+    RpcObject,
+    SerializableObject,
+    ServiceStatus,
+    WrongMessageFormatException,
+    from_rpc,
+    to_rpc,
+)
 
 m = {
-    'body_size': 5,
-    'headers': {'foo': b'bar'},
-    'content_type': 'application/json',
-    'content_encoding': '',
-    'delivery_mode': 1,
-    'priority': 0,
-    'correlation_id': None,
-    'reply_to': None,
-    'expiration': None,
-    'message_id': '83b81a6583ee11cd89418201d89add72',
-    'timestamp': '2019-08-22 17:19:53',
-    'type': 'xxx',
-    'user_id': 'guest',
-    'app_id': 'twagent',
-    'cluster_id': '',
-    'consumer_tag': 'twagent',
-    'delivery_tag': 1,
-    'exchange': '',
-    'redelivered': False,
-    'routing_key': 'twagent',
-    'body': "xxxxx".encode()
+    "body_size": 5,
+    "headers": {"foo": b"bar"},
+    "content_type": "application/json",
+    "content_encoding": "",
+    "delivery_mode": 1,
+    "priority": 0,
+    "correlation_id": None,
+    "reply_to": None,
+    "expiration": None,
+    "message_id": "83b81a6583ee11cd89418201d89add72",
+    "timestamp": "2019-08-22 17:19:53",
+    "type": "xxx",
+    "user_id": "guest",
+    "app_id": "twagent",
+    "cluster_id": "",
+    "consumer_tag": "twagent",
+    "delivery_tag": 1,
+    "exchange": "",
+    "redelivered": False,
+    "routing_key": "twagent",
+    "body": "xxxxx".encode(),
 }
 
 
 def test_rpc_wrap():
-    json = r'{"c_type": "Ping", "c_data": "{\"ping\": \"ping Hallo\"}", "request_type": 1}'
+    json = (
+        r'{"c_type": "Ping", "c_data": "{\"ping\": \"ping Hallo\"}", "request_type": 1}'
+    )
     ping = Ping(ping="ping Hallo")
     msg = to_rpc(ping)
     assert msg == json
 
 
 def test_rpc_unwrap():
-    json = r'{"c_type": "Ping", "c_data": "{\"ping\": \"ping Hallo\"}", "request_type": 1}'
+    json = (
+        r'{"c_type": "Ping", "c_data": "{\"ping\": \"ping Hallo\"}", "request_type": 1}'
+    )
     ping = from_rpc(json)
     assert isinstance(ping, Ping)
 
 
 class TestRpcMessage:
     def test_is_req(self):
-        m = RpcMessage(c_type='c_type', c_data='c_data')
+        m = RpcMessage(c_type="c_type", c_data="c_data")
         assert m.is_request()
-        m = RpcMessage(c_type='c_type', c_data='c_data', request_type=RpcMessageTypes.RPC_RESPONSE)
+        m = RpcMessage(
+            c_type="c_type", c_data="c_data", request_type=RpcMessageTypes.RPC_RESPONSE
+        )
         assert m.is_response()
 
 
@@ -112,16 +132,31 @@ class TestSerializableObject:
         obj = SerializableObject.deserialize(msg)
         assert isinstance(obj, SerializableObject)
 
-    def test_deserialize_error_wrong_message_format(self):
-        msg = 'wrong-format'
-        # msg = '{"c_data": "{}"}'
-        with pytest.raises(WrongMessageFormatException):
-            obj = SerializableObject.deserialize(msg)
+    def test_deserialize_error_wrong_message_format(self, caplog):
+        caplog.set_level(logging.DEBUG)
 
-    def test_deserialize_error_unknown_object(self):
+        # given a wrong formatted message
+        msg = "wrong-format"
+
+        # then deserialization logs error with traceback, and returned obj is empty
+        # with pytest.raises(WrongMessageFormatException):
+        #     obj = SerializableObject.deserialize(msg)
+        obj = SerializableObject.deserialize(msg)
+        assert "ERROR messages Wrong message format: wrong-format" not in caplog.text
+        assert obj is None
+
+    def test_deserialize_error_unknown_object(self, caplog):
+        caplog.set_level(logging.DEBUG)
         msg = '{"c_type": "UnknownObject", "c_data": "{}"}'
-        with pytest.raises(WrongMessageFormatException):
-            obj = SerializableObject.deserialize(msg)
+        # with pytest.raises(WrongMessageFormatException):
+        #     obj = SerializableObject.deserialize(msg)
+
+        # then deserialization logs error with traceback, and returned obj is empty
+        # with pytest.raises(WrongMessageFormatException):
+        #     obj = SerializableObject.deserialize(msg)
+        obj = SerializableObject.deserialize(msg)
+        assert "ERROR messages Object type unknown: UnknownObject" not in caplog.text
+        assert obj is None
 
     def test_demo_data_timezone_conversion_to_utc(self):
         json = r'{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}'
@@ -140,7 +175,7 @@ class TestSerializableObject:
         msg = demo.serialize()
 
         msg_type = SerializableObject.extract_type(msg)
-        assert msg_type == 'DemoData'
+        assert msg_type == "DemoData"
 
     def test_deserialize_new_msg_class(self):
         json = r'{"c_type": "MyData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}'
