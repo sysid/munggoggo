@@ -85,7 +85,25 @@ def test_list_peers():
     # then only self/Ctrl must be found
     assert result.exit_code == 0
     assert "Ctrl" in result.output
-    print(result.output)
+
+
+def test_list_behav():
+    start = datetime.now()
+    runner = CliRunner()
+    # given
+    # when list-behaviour with non existing arget is called
+    result = runner.invoke(cli, ["list-behaviour", "xxx"], obj=dict(start=start))
+
+    # then error message to be displayed
+    assert result.exit_code == 0
+    assert "Invalid target: xxx" in result.output
+
+    # when list-behaviour with non existing arget is called
+    result = runner.invoke(cli, ["list-behaviour", "SqlAgent"], obj=dict(start=start))
+
+    # then error message to be displayed
+    assert result.exit_code == 0
+    assert "SqlAgent.SqlBehav" in result.output
 
 
 def test_broadcast():

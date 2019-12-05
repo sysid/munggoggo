@@ -79,10 +79,15 @@ async def broadcast(msg, msg_type):
 async def list_behaviour(ctx, agent):
     async with Ctrl(identity="Ctrl") as a:
         a.logger.setLevel(LOGGING_LEVEL)
+
+        if not await target_exists(a, agent):
+            return False
+
         click.echo(f"Listing behaviours of {agent}:")
         obj = ListBehav()
         result = await a.call(obj.to_rpc(), agent)
-        print(result)
+        for behav in result.to_dict().get("behavs", list()):
+            click.secho(behav, fg="cyan")
         await asyncio.sleep(0.1)  # required for context cleanup
         # print(f"Duration: {datetime.now() - start}")
 
@@ -95,7 +100,8 @@ async def list_peers(ctx):
         a.logger.setLevel(LOGGING_LEVEL)
         click.echo(f"Listing peers.")
         peers = await a.list_peers()
-        click.echo(f"{[peer.get('name') for peer in peers]}")
+        for peer in peers:
+            click.secho(f"{peer.get('name')}", fg="cyan")
         await asyncio.sleep(0.1)  # required for context cleanup
         # print(f"Duration: {datetime.now() - start}")
 
@@ -103,7 +109,7 @@ async def list_peers(ctx):
 async def target_exists(core: Core, target: str) -> bool:
     peers = [peer.get("name") for peer in await core.list_peers()]
     if target not in peers:
-        click.echo(f"Invalid target: {target}. Choose one of: {peers}.")
+        click.secho(f"Invalid target: {target}. Choose one of: {peers}.", fg="red")
         return False
     return True
 
@@ -132,12 +138,12 @@ async def call(ctx, command, target, behav):
         elif command in ["Start", "start"]:
             obj.command = "start"
         else:
-            click.echo(f"Invalid command.")
-            click.echo(f"Expected one of [start, stop]")
+            click.secho(f"Invalid command.", fg="red")
+            click.secho(f"Expected one of [start, stop]", fg="red")
             return False
 
         result = await a.call(obj.to_rpc(), target=target)
-        click.echo(f"rpc result: {result}")
+        click.secho(f"rpc result: {result}", fg="cyan")
 
         await asyncio.sleep(0.1)  # required for context cleanup
         # print(f"Duration: {datetime.now() - start}")
@@ -180,15 +186,16 @@ if __name__ == "__main__":
     python ctrl.py send-message '{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo2\", \"date\": 1546300800.0}"}' "CUSTOM" SqlAgent
     python ctrl.py call start SqlAgent SqlAgent.SqlBehav
     python ctrl.py call start SqlAgent SqlBehav
+    python ctrl.py list-traces SqlAgent --sender Ctrl
     """
     start = datetime.now()
 
     # cli(['-d', 'list-peers'], obj=dict(start=start))
     # list_peers([])
 
-    # list_behaviour(['SqlAgent'])
+    # list_behaviour(['SqlAgenttt'])
 
-    # broadcast(['{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}', "CUSTOM"])
+    # broadcast([r'{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}', "CUSTOM"])
     # broadcast(['wrong format', "CUSTOM"])
 
     # send_message([r'{"c_type": "DemoData", "c_data": "{\"message\": \"Hallo\", \"date\": 1546300800.0}"}', "CUSTOM", "SqlAgent"])
