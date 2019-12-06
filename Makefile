@@ -5,7 +5,7 @@ TESTDIR       = munggoggo/tests
 MAKEFILE_LIST = /tmp/makefile_list.txt
 MAKE          = make
 
-.PHONY: all help docs clean
+.PHONY: all help docs clean frontend
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -14,7 +14,7 @@ help:
 default: all
 
 #all: unit
-all: check clean docs bump
+all: check clean docs frontend bump
 	@echo "--------------------------------------------------------------------------------"
 	@echo "-M- commit changes"
 	@echo "-M- use <bump!> to confirm"
@@ -37,7 +37,7 @@ clean:
 	@echo "Cleaning up..."
 	#git clean -Xdf
 	rm -rf docs/build
-	rm -rf static/*
+	#rm -rf static/*  # TODO: uncomment once OPENAPI is fixed again
 
 bump: check
 	@echo "Bumping part: $(part)"
@@ -56,7 +56,7 @@ release:
 check:
 	@[ "${part}" ] || ( echo "-E- bump2version <part> is not set"; exit 1 )
 
-frontend: check
+frontend:
 	@echo "building and installing frontend"
 	./scripts/install_frontend.sh build
 	./scripts/install_frontend.sh install

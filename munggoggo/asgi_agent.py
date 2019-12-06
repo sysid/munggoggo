@@ -55,27 +55,25 @@ class WsController(WebSocketEndpoint):
     Implements websocket communication for AsgiAgent.
     Exposes websocket at Core as ``self.ws``
     """
+
     counter = 0
     encoding = "json"
 
     # TODO: only working for one connection: https://github.com/taoufik07/nejma
     async def on_receive(self, websocket, data):
-        app = self.scope.get('app')
+        app = self.scope.get("app")
         core = app.agent
         _log.debug(f"ws.receive: {data}")
 
         msg = dict(msg=f"Message text was: {data['command']}")
         originator = data.get("originator")
-        agent = originator.get('name').split('.')[0]
-        behav = originator.get('name').split('.')[1]
+        agent = originator.get("name").split(".")[0]
+        behav = originator.get("name").split(".")[1]
         command = data.get("command")
-        obj = ManageBehav(
-            behav=behav,
-            command="stop",
-        )
+        obj = ManageBehav(behav=behav, command="stop",)
 
         # map commands
-        if command == 'Stop':
+        if command == "Stop":
             obj.command = "stop"
         else:
             obj.command = "start"
@@ -85,7 +83,7 @@ class WsController(WebSocketEndpoint):
         # await websocket.send_json(msg)
 
     async def on_connect(self, websocket):
-        app = self.scope.get('app')
+        app = self.scope.get("app")
         app.ws = websocket  # make ws available at AsgiAgent
         core = app.agent
         await websocket.accept()
@@ -93,7 +91,7 @@ class WsController(WebSocketEndpoint):
         await websocket.send_json(msg)
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int) -> None:
-        app = self.scope.get('app')
+        app = self.scope.get("app")
         app.ws = None
         core = app.agent
         await websocket.close(code=1000)
@@ -149,10 +147,12 @@ class AsgiAgent(Starlette):
             self.add_middleware(HTTPSRedirectMiddleware)
 
         self.add_route("/", self.homepage, methods=["GET"], include_in_schema=True)
-        self.add_route(path=f"/jsonrpc", route=ExampleRpcEndpoint, include_in_schema=True)
+        self.add_route(
+            path=f"/jsonrpc", route=ExampleRpcEndpoint, include_in_schema=True
+        )
         self.add_route(path=f"/openapi", route=self.openapi, include_in_schema=False)
         self.add_route(path=f"/ws_html", route=self.ws_html, include_in_schema=False)
-        self.add_websocket_route(path='/ws', route=WsController, name='ws')
+        self.add_websocket_route(path="/ws", route=WsController, name="ws")
 
         self.rpc_dispatcher = dispatcher
 
@@ -161,13 +161,13 @@ class AsgiAgent(Starlette):
         ################################################################################
         self.schema_generator = None
         self.schema_models = dict()
-        self.add_schema('PlatformInformation', PlatformInformationSchema)
+        self.add_schema("PlatformInformation", PlatformInformationSchema)
         # self.add_schema('JsonRpc', JsonRpcSchema)  # TODO: fix openapi spec with model definition
 
         ################################################################################
         # static files
         ################################################################################
-        self.static_dir = 'static/'
+        self.static_dir = "static/"
         self.static_route = f"/{self.static_dir}"
 
         # Make the static/templates directory if they don't exist.
@@ -177,7 +177,11 @@ class AsgiAgent(Starlette):
 
         if self.static_dir is not None:
             _log.info(f"Configuring route {self.static_route}")
-            self.mount(self.static_route, app=StaticFiles(directory=self.static_dir, packages=None), name="static")
+            self.mount(
+                self.static_route,
+                app=StaticFiles(directory=self.static_dir, packages=None),
+                name="static",
+            )
 
     async def homepage(self, request):
         """home
@@ -189,11 +193,7 @@ class AsgiAgent(Starlette):
                     application/json:
                         schema: PlatformInformationSchema
         """
-        return JSONResponse(
-            PlatformInformationSchema().dump({
-                "name": "ASGI Agent"
-            })
-        )
+        return JSONResponse(PlatformInformationSchema().dump({"name": "ASGI Agent"}))
 
     def ws_html(req, request):
         return HTMLResponse(html2)
@@ -215,13 +215,27 @@ class AsgiAgent(Starlette):
             self.schema_generator.spec.components.schema(name, schema=schema)
 
         # create spec file for display via apistar
-        schema = yaml.dump(self.schema_generator.get_schema(routes=self.routes), default_flow_style=False)
-        async with AIOFile('static/schema.yaml', 'w+') as afp:
-            await afp.write(schema)
-        return HTMLResponse(
-            apistar.docs(schema, schema_url='/static/schema.yaml', theme="swaggerui", static_url='/static/'))
+        schema = yaml.dump(
+            self.schema_generator.get_schema(routes=self.routes),
+            default_flow_style=False,
+        )
 
-    def add_schema(self, name: str, schema: Schema, check_existing: bool = True) -> None:
+        # TODO: fix (Deactivated due to: ValueError: call stack is not deep enough)
+        # async with AIOFile('static/schema.yaml', 'w+') as afp:
+        #     await afp.write(schema)  # BUG: ValueError: call stack is not deep enough
+
+        return HTMLResponse(
+            apistar.docs(
+                schema,
+                schema_url="/static/schema.yaml",
+                theme="swaggerui",
+                static_url="/static/",
+            )
+        )
+
+    def add_schema(
+        self, name: str, schema: Schema, check_existing: bool = True
+    ) -> None:
         """Adds a mashmallow schema to the API specification.
 
         :param name: ClassName
