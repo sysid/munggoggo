@@ -75,7 +75,7 @@ const App = () => {
      * if so attempts to reconnect
      */
     const check = () => {
-        if (!ws || ws.readyState == WebSocket.CLOSED) connect(); //check if websocket instance is closed, if so call `connect` function.
+        if (!ws || ws.readyState === WebSocket.CLOSED) connect(); //check if websocket instance is closed, if so call `connect` function.
     };
 
     return (

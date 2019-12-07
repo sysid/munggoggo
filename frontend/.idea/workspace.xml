@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="58053465-4938-44dc-ac4d-f4178f28976d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../docs/source/tour.rst" beforeDir="false" afterPath="$PROJECT_DIR$/../docs/source/tour.rst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.js" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -25,6 +25,11 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="list.type.of.created.stylesheet" value="CSS" />
@@ -38,25 +43,13 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="editing.templates" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
     <key name="es6.move.members.recent.items">
       <recent name="$PROJECT_DIR$/src/Agent.js" />
       <recent name="$PROJECT_DIR$/src/Behaviour.js" />
     </key>
-  </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
   </component>
   <component name="RunManager" selected="JavaScript Debug.DebugApp">
     <configuration name="renders without crashing" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
@@ -89,6 +82,18 @@
         <item itemvalue="Node.js.AgentList.js" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -123,6 +128,9 @@
       <workItem from="1572482355213" duration="11499000" />
       <workItem from="1572521607053" duration="644000" />
       <workItem from="1572621377648" duration="2561000" />
+      <workItem from="1575727066961" duration="23000" />
+      <workItem from="1575727102702" duration="22000" />
+      <workItem from="1575727208561" duration="2055000" />
     </task>
     <servers />
   </component>
@@ -141,6 +149,21 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/../../.." />
+    </ignored-roots>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="1497" y="476" width="424" height="513" key="FileChooserDialogImpl" timestamp="1575729652252">
+      <screen x="0" y="27" width="3440" height="1413" />
+    </state>
+    <state x="1497" y="476" width="424" height="513" key="FileChooserDialogImpl/0.27.3440.1413@0.27.3440.1413" timestamp="1575729652252" />
+    <state x="1209" y="367" key="SettingsEditor" timestamp="1575727725863">
+      <screen x="0" y="27" width="3440" height="1413" />
+    </state>
+    <state x="1209" y="367" key="SettingsEditor/0.27.3440.1413@0.27.3440.1413" timestamp="1575727725863" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
