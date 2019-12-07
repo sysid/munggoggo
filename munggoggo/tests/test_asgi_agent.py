@@ -13,7 +13,7 @@ def app():
     return asgi_agent.AsgiAgent(agent=agent, debug=True)
 
 
-@pytest.mark.parametrize('url', ["/", "/ws_html", "/openapi"])
+@pytest.mark.parametrize("url", ["/", "/ws_html", "/openapi", "/sse_html"])
 def test_app_smoke(app, url):
     with TestClient(app) as client:
         response = client.get(url)
@@ -21,9 +21,7 @@ def test_app_smoke(app, url):
 
 
 def test_jsonrpc():
-    config = {
-        "configure_rpc": True
-    }
+    config = {"configure_rpc": True}
     agent = Agent(identity="TestAsgiAgent", config=config)
     app = asgi_agent.AsgiAgent(agent=agent, debug=True)
     with TestClient(app) as client:
@@ -38,4 +36,3 @@ def test_jsonrpc():
         response = client.post("/jsonrpc", json=payload, headers=headers).json()
         print(f"------> {response}")
         assert response.get("result") == 2
-

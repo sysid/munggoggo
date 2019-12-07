@@ -152,7 +152,7 @@ class AsgiAgent(Starlette):
             path=f"/jsonrpc", route=ExampleRpcEndpoint, include_in_schema=True
         )
         self.add_route(path=f"/openapi", route=self.openapi, include_in_schema=False)
-        self.add_route(path=f"/html_sse", route=self.html_sse, include_in_schema=True)
+        self.add_route(path=f"/sse_html", route=self.sse_html, include_in_schema=True)
         self.add_route(path=f"/sse", route=self.sse, include_in_schema=False)
         self.add_route(path=f"/ws_html", route=self.ws_html, include_in_schema=False)
         self.add_websocket_route(path="/ws", route=WsController, name="ws")
@@ -201,7 +201,7 @@ class AsgiAgent(Starlette):
     def ws_html(self, request):
         return HTMLResponse(html2)
 
-    def html_sse(self, request):
+    def sse_html(self, request):
         return HTMLResponse(html_sse)
 
     async def sse(self, request):

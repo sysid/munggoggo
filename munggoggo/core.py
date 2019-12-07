@@ -473,33 +473,37 @@ class Core(MyService):
     async def publish_sse(
         self, interval: int, id: str = None, event: str = None, retry: int = None
     ):
+
+        async for _ in self.itertimer(want_seconds(interval)):
+            peers = await self.list_peers()
+            data = json.dumps({"from": self.identity, "peers": peers})
+            buffer = self._create_sse(data, event, id, retry)
+            yield buffer.getvalue().encode("utf-8")
+
+    def _create_sse(
+        self, data: str, event: str = None, id: str = None, retry: int = None
+    ):
         self.DEFAULT_SEPARATOR = "\r\n"
         self.LINE_SEP_EXPR = re.compile(r"\r\n|\r|\n")
         self._sep = self.DEFAULT_SEPARATOR
-        async for _ in self.itertimer(want_seconds(interval)):
-            data = json.dumps(self._create_peer_msg())
-            buffer = io.StringIO()
-            if id is not None:
-                buffer.write(self.LINE_SEP_EXPR.sub("", "id: {}".format(id)))
-                buffer.write(self._sep)
-
-            if event is not None:
-                buffer.write(self.LINE_SEP_EXPR.sub("", "event: {}".format(event)))
-                buffer.write(self._sep)
-
-            for chunk in self.LINE_SEP_EXPR.split(data):
-                buffer.write("data: {}".format(chunk))
-                buffer.write(self._sep)
-
-            if retry is not None:
-                if not isinstance(retry, int):
-                    raise TypeError("retry argument must be int")
-                buffer.write("retry: {}".format(retry))
-                buffer.write(self._sep)
-
+        buffer = io.StringIO()
+        if id is not None:
+            buffer.write(self.LINE_SEP_EXPR.sub("", "id: {}".format(id)))
             buffer.write(self._sep)
-            self.log.warning(buffer.getvalue().encode("utf-8"))
-            yield buffer.getvalue().encode("utf-8")
+        if event is not None:
+            buffer.write(self.LINE_SEP_EXPR.sub("", "event: {}".format(event)))
+            buffer.write(self._sep)
+        for chunk in self.LINE_SEP_EXPR.split(data):
+            buffer.write("data: {}".format(chunk))
+            buffer.write(self._sep)
+        if retry is not None:
+            if not isinstance(retry, int):
+                raise TypeError("retry argument must be int")
+            buffer.write("retry: {}".format(retry))
+            buffer.write(self._sep)
+        buffer.write(self._sep)
+        self.log.info(f"SSE: {buffer.getvalue()}")
+        return buffer
 
     def __repr__(self):
         return "{}".format(self.__class__.__name__)

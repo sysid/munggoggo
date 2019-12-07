@@ -187,3 +187,35 @@ class TestPeriodicPeerUpdate:
             identities = [status.name for (date, status, category) in a.peers.all()]
             assert "core1" in identities
             assert "ctrl" in identities
+
+
+@pytest.mark.asyncio
+class TestSSE:
+    async def test_publish_sse(self, core1):
+        with pytest.raises(asyncio.TimeoutError):
+            # given timeout
+            async with timeout(delay=0.2):
+                # when interval < timeout
+                async for msg in core1.publish_sse(0.1):
+                    # at least one SSE message should have been emitted
+                    assert '"peers": [{' in msg.decode("utf-8")
+
+    @pytest.mark.parametrize(
+        "input,expected",
+        [
+            (dict(data="foo"), "data: foo\r\n\r\n"),
+            (dict(data="foo", event="bar"), "event: bar\r\ndata: foo\r\n\r\n"),
+            (
+                dict(data="foo", event="bar", id="xyz"),
+                "id: xyz\r\nevent: bar\r\ndata: foo\r\n\r\n",
+            ),
+            (
+                dict(data="foo", event="bar", id="xyz", retry=1),
+                "id: xyz\r\nevent: bar\r\ndata: foo\r\nretry: 1\r\n\r\n",
+            ),
+        ],
+    )
+    async def test__create_sse(self, core1, input, expected):
+        # data = 'foo'
+        msg = core1._create_sse(**input)
+        assert msg.getvalue() == expected
