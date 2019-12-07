@@ -82,10 +82,11 @@ class TestCommunication:
 
     async def test_fanout_send_recv(self, ctrl, core1, core2):
         # when messages is sent to all receivers
+        await asyncio.sleep(0.2)  # relinquish cpu
         await ctrl.fanout_send(msg="Hallo Thomas", msg_type="type")
         await asyncio.sleep(0.2)  # relinquish cpu
 
-        # then one message should show up in trace.store
+        # then one message should show up in trace.store of all receivers
         msg = ctrl.traces.store[0][1]
         assert "Hallo" in msg.body
 
@@ -122,7 +123,7 @@ async def test_get_behaviour(core1):
 
 @pytest.mark.usefixtures("init_rmq")
 @pytest.mark.asyncio
-class TestPeriodicTasks:
+class TestPeriodicPeerUpdate:
     async def test_service_itertimer(self, core1, capsys):
         """ demonstrate itertimer usage """
 
@@ -140,6 +141,7 @@ class TestPeriodicTasks:
     async def test_update_peers_self(self, core1):
         # given
         # when core is initialized
+        await asyncio.sleep(0.2)
 
         # then peerlist contains self
         assert len(core1.peers.all()) == 1

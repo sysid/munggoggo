@@ -37,7 +37,6 @@ clean:
 	@echo "Cleaning up..."
 	#git clean -Xdf
 	rm -rf docs/build
-	#rm -rf static/*  # TODO: uncomment once OPENAPI is fixed again
 
 bump: check
 	@echo "Bumping part: $(part)"
