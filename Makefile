@@ -5,22 +5,23 @@ TESTDIR       = munggoggo/tests
 MAKEFILE_LIST = /tmp/makefile_list.txt
 MAKE          = make
 
-.PHONY: all help docs clean
+.PHONY: all help docs clean frontend
 
 # Put it first so that "make" without argument is like "make help".
 help:
-	@echo "$(MAKE) [all,docs,clean,bump,release]"
+	@echo "$(MAKE) [all,docs,clean,bump,release,frontend]"
 
 default: all
 
 #all: unit
-all: clean docs bump
+all: check clean docs frontend bump
 	@echo "--------------------------------------------------------------------------------"
 	@echo "-M- commit changes"
 	@echo "-M- use <bump!> to confirm"
 	@echo "-M- commit amend README.rst"
 	@echo "-M- use <release> to switch to 'prod'"
 	@echo "--------------------------------------------------------------------------------"
+	@git add .
 	@git status
 
 unit:
@@ -36,15 +37,26 @@ clean:
 	@echo "Cleaning up..."
 	#git clean -Xdf
 	rm -rf docs/build
+	#rm -rf static/*  # TODO: uncomment once OPENAPI is fixed again
 
-bump:
-	bump2version --dry-run --allow-dirty --verbose patch
+bump: check
+	@echo "Bumping part: $(part)"
+	bump2version --dry-run --allow-dirty --verbose $(part)
 	@echo "use <bump!> to confirm"
 
-bump!:
-	bump2version --allow-dirty --verbose patch
+bump!: check
 	cp docs/source/index.rst README.rst  # changed by bump2version
+	git add README.rst
+	bump2version --allow-dirty --verbose $(part)
 	@echo "use release after bump"
 
 release:
 	bump2version --allow-dirty --verbose release
+
+check:
+	@[ "${part}" ] || ( echo "-E- bump2version <part> is not set"; exit 1 )
+
+frontend:
+	@echo "building and installing frontend"
+	./scripts/install_frontend.sh build
+	./scripts/install_frontend.sh install

@@ -23,7 +23,6 @@ class TestBasics:
     async def test_agent_fixture(self, core1):
         assert await core1.dummy()
 
-
     async def test_without_contextmanager(self, event_loop):
         identity = "twagent"
         a = Core(identity=identity)
@@ -35,15 +34,24 @@ class TestBasics:
         await a.stop()
         await asyncio.sleep(0.1)  # relinquish cpu
         assert a._stopped.is_set()
-        assert a.state == 'shutdown'
+        assert a.state == "shutdown"
         a.service_reset()
         assert not a.started
-        assert a.state == 'init'
+        assert a.state == "init"
 
     async def test_status(self, core1):
         print(core1.status.to_json())
         assert isinstance(core1.status, CoreStatus)
-        assert core1.status.to_json() == '{"name": "core1", "state": "running", "behaviours": []}'
+        assert (
+            core1.status.to_json()
+            == '{"name": "core1", "state": "running", "behaviours": []}'
+        )
+
+    async def test_list_peers(self, core1, core2, ctrl):
+        await ctrl._update_peers()
+        await asyncio.sleep(0.1)  # relinquish cpu
+        peers = await ctrl.list_peers()
+        assert len(peers) == 3
 
 
 @pytest.mark.usefixtures("init_rmq")
@@ -51,7 +59,9 @@ class TestBasics:
 class TestCommunication:
     async def test_direct_send_recv(self, core1):
         # when messages is sent to correct receiver
-        await core1.direct_send(msg="Hallo Thomas", msg_type="type", target=core1.identity)
+        await core1.direct_send(
+            msg="Hallo Thomas", msg_type="type", target=core1.identity
+        )
 
         # allow callback on_direct_message to run
         await asyncio.sleep(0.1)  # relinquish cpu
@@ -61,7 +71,9 @@ class TestCommunication:
         assert "Hallo" in msg.body
 
         # when messages is sent to wrong receiver
-        await core1.direct_send(msg="Hallo Thomas", msg_type="type", target="does-not-exist")
+        await core1.direct_send(
+            msg="Hallo Thomas", msg_type="type", target="does-not-exist"
+        )
         await asyncio.sleep(0.1)  # relinquish cpu
 
         # still only one message should show up in trace.store
@@ -70,7 +82,7 @@ class TestCommunication:
 
     async def test_fanout_send_recv(self, ctrl, core1, core2):
         # when messages is sent to all receivers
-        await ctrl.fanout_send(msg="Hallo Thomas", msg_type='type')
+        await ctrl.fanout_send(msg="Hallo Thomas", msg_type="type")
         await asyncio.sleep(0.2)  # relinquish cpu
 
         # then one message should show up in trace.store
@@ -88,7 +100,6 @@ class TestCommunication:
 
 @pytest.mark.asyncio
 async def test_get_behaviour(core1):
-
     # given
     class Behav1(Behaviour):
         async def run(self):
@@ -103,10 +114,10 @@ async def test_get_behaviour(core1):
 
     # when
     # then
-    behav = core1.get_behaviour('Behav1')
-    assert str(behav) == f'{core1.identity}.Behav1'
-    behav = core1.get_behaviour('Behav2')
-    assert str(behav) == f'{core1.identity}.Behav2'
+    behav = core1.get_behaviour("Behav1")
+    assert str(behav) == f"{core1.identity}.Behav1"
+    behav = core1.get_behaviour("Behav2")
+    assert str(behav) == f"{core1.identity}.Behav2"
 
 
 @pytest.mark.usefixtures("init_rmq")
@@ -117,13 +128,13 @@ class TestPeriodicPeerUpdate:
 
         with pytest.raises(asyncio.TimeoutError):
             # given timeout
-            async with timeout(timeout=0.2):
+            async with timeout(delay=0.2):
                 # when itertimer interval < timeout
                 async for sleep_time in core1.itertimer(0.1):
                     # then at least once the function is called
-                    print('another second passed, just woke up...')
+                    print("another second passed, just woke up...")
                     captured = capsys.readouterr()  # prevents visibility on commandline
-                    assert 'another second passed' in captured.out
+                    assert "another second passed" in captured.out
                     assert captured.err == ""
 
     async def test_update_peers_self(self, core1):
@@ -133,11 +144,14 @@ class TestPeriodicPeerUpdate:
         # then peerlist contains self
         assert len(core1.peers.all()) == 1
         identities = [status.name for (date, status, category) in core1.peers.all()]
-        assert 'core1' in identities
+        assert "core1" in identities
 
     async def test_update_peers_self_create_status_message(self, core1):
         # given
-        expected = {'from': 'core1', 'peers': [{'name': 'core1', 'state': 'running', 'behaviours': []}]}
+        expected = {
+            "from": "core1",
+            "peers": [{"name": "core1", "state": "running", "behaviours": []}],
+        }
 
         # when core is initialized
 
@@ -162,7 +176,7 @@ class TestPeriodicPeerUpdate:
 
             # then peerlist contains self multiple times
             identities = [status.name for (date, status, category) in a.peers.all()]
-            assert 'core1' in identities
+            assert "core1" in identities
             assert len(a.peers.all()) > 1
 
     async def test_update_peers_two(self, ctrl):
@@ -182,6 +196,5 @@ class TestPeriodicPeerUpdate:
 
             # then peerlist contains self multiple times
             identities = [status.name for (date, status, category) in a.peers.all()]
-            assert 'core1' in identities
-            assert 'ctrl' in identities
-
+            assert "core1" in identities
+            assert "ctrl" in identities

@@ -32,7 +32,7 @@ class TestPubSub:
         await asyncio.sleep(0)  # relinquish cpu
 
         # then trace store has got both messages + ping/pong
-        assert len(pubsub_behav.core.traces.store) == 4
+        assert len(pubsub_behav.core.traces.store) == 8
 
     async def test_receive(self, pubsub_behav):
         # Given
@@ -51,7 +51,9 @@ class TestPubSub:
 class TestRPC:
     async def test_rpc_call(self, rpc_behav):
 
-        result = await rpc_behav.rpc.rpc_call("example_rpc_method", x=30, y=2, flag=True)
+        result = await rpc_behav.rpc.rpc_call(
+            "example_rpc_method", x=30, y=2, flag=True
+        )
         assert result == 60
 
     async def test_agent_rpc_non_existing_method(self, rpc_behav):
@@ -60,7 +62,7 @@ class TestRPC:
         #     response = await rpc_behav.rpc.rpc_call("not-existing", x=30, y=2)
         response = await rpc_behav.rpc.rpc_call("not-existing", x=30, y=2)
         assert isinstance(response, str)
-        assert 'Illegal' in response
+        assert "Illegal" in response
 
 
 def test_list_rpc_methods():

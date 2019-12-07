@@ -18,8 +18,23 @@ from aio_pika import IncomingMessage
 from async_timeout import timeout
 from marshmallow import Schema, fields
 
-from messages import RpcMessageTypes, RpcMessage, Pong, RpcError, RpcObject, Ping, ListBehav, ManageBehav, \
-    ListTraceStore, Shutdown, ControlMessage, SerializableObject, PongControl, PingControl
+from messages import (
+    RpcMessageTypes,
+    RpcMessage,
+    Pong,
+    RpcError,
+    RpcObject,
+    Ping,
+    ListBehav,
+    ManageBehav,
+    ListTraceStore,
+    Shutdown,
+    ControlMessage,
+    SerializableObject,
+    PongControl,
+    PingControl,
+    RmqMessageTypes,
+)
 from mode.utils.logging import CompositeLogger, get_logger
 from settings import TIMEOUT
 
@@ -32,7 +47,9 @@ _log = logging.getLogger(__name__)
 
 async def default_handler(behav: Behaviour, msg: IncomingMessage, *args, **kwargs):
     print(f"{inspect.currentframe().f_code.co_name}: dispatched message: {msg.body}")
-    _log.warning(f"{inspect.currentframe().f_code.co_name}: dispatched message: {msg.body}")
+    _log.warning(
+        f"{inspect.currentframe().f_code.co_name}: dispatched message: {msg.body}"
+    )
 
 
 class Handler(object):
@@ -71,7 +88,7 @@ class SystemHandler(object):
     @classmethod
     def _init_subclass_logger(cls) -> None:
         # make sure class has a logger.
-        if cls.logger is None or getattr(cls.logger, '__modex__', False):
+        if cls.logger is None or getattr(cls.logger, "__modex__", False):
             logger = cls.logger = get_logger(cls.__module__)
             logger.__modex__ = True
 
@@ -140,7 +157,11 @@ class RpcHandler(SystemHandler):
                 reply = await self.handle_manage_behav(reply, rpc_obj)
 
             elif isinstance(rpc_obj, ListTraceStore):
-                rpc_obj.traces = self.core.traces.filter(limit=rpc_obj.limit, app_id=rpc_obj.app_id, category=rpc_obj.category)
+                rpc_obj.traces = self.core.traces.filter(
+                    limit=rpc_obj.limit,
+                    app_id=rpc_obj.app_id,
+                    category=rpc_obj.category,
+                )
                 reply = rpc_obj.to_rpc(rt=RpcMessageTypes.RPC_RESPONSE)
 
             elif isinstance(rpc_obj, Shutdown):
@@ -156,7 +177,9 @@ class RpcHandler(SystemHandler):
             return
 
         else:
-            reply = RpcError(error="Unknown RPC request").to_rpc(rt=RpcMessageTypes.RPC_RESPONSE)
+            reply = RpcError(error="Unknown RPC request").to_rpc(
+                rt=RpcMessageTypes.RPC_RESPONSE
+            )
 
         try:
             with timeout(TIMEOUT):
@@ -173,18 +196,25 @@ class RpcHandler(SystemHandler):
         rpc_obj.result = f"Shutdown of {self.core.identity} initiated."
         reply = rpc_obj.to_rpc(rt=RpcMessageTypes.RPC_RESPONSE)
         # ensure, that response still gets sent back
-        self.core.loop.call_later(delay=0.2, callback=functools.partial(self.core.loop.create_task, self.core.stop()))
+        self.core.loop.call_later(
+            delay=0.2,
+            callback=functools.partial(self.core.loop.create_task, self.core.stop()),
+        )
         return reply
 
     async def handle_manage_behav(self, reply, rpc_obj):
         behav = self.core.get_behaviour(rpc_obj.behav)
         if behav:
-            if rpc_obj.command == 'start':
-                await behav.start()
-                rpc_obj.result = f"{behav} started."
-            elif rpc_obj.command == 'stop':
-                await behav.stop()
-                behav.service_reset()
+            if rpc_obj.command == "start":
+                if not behav.started:
+                    await behav.start()
+                    rpc_obj.result = f"{behav} started."
+                else:
+                    rpc_obj.result = f"{behav} already running."
+            elif rpc_obj.command == "stop":
+                if behav.started:
+                    await behav.stop()
+                    behav.service_reset()
                 rpc_obj.result = f"{behav} stopped: {behav.state}"
             else:
                 rpc_obj.result = f"Unknown command {rpc_obj.command}."
@@ -198,11 +228,6 @@ class RpcHandler(SystemHandler):
             "/".join(base.__name__ for base in self.__class__.__bases__),
             self.__class__.__name__,
         )
-
-
-class RmqMessageTypes(Enum):
-    CONTROL = 0
-    RPC = 1
 
 
 class Registry(object):

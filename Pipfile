@@ -12,6 +12,9 @@ rinohtype = "*"
 pytest-mock = "*"
 pytest-factoryboy = "*"
 pytest-cov = "*"
+autohooks = "*"
+autohooks-plugin-black = "*"
+autohooks-plugin-isort = "*"
 
 [packages]
 tw = {editable = true,path = "./../twpy"}

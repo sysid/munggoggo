@@ -48,21 +48,20 @@ This gets you an agent which publishes and reads messages from the message bus o
 Features
 --------
 
-- asyncio based agent framework
-- RabbitMQ messaging backend
-- agents can have (multiple) behaviours
-- agents and their behaviours form a graph and can be visualized
+- asyncio based agent framework.
+- RabbitMQ messaging backend.
+- Basic agents provided as building blocks.
+- **agents can have (multiple) behaviours!**
+- agents and their behaviours form a graph and can be visualized.
 - communication model: broadcast, point-to-point, topics pub-sub, RPC
 - WEB RPC
 - React based frontend using WebSockets
 - Python >= 3.7
-- `ASGI <https://asgi.readthedocs.io>`_ framework, the future of Python web services.
-- **A built in testing agent for the web ...**.
-- Automatic gzipped web responses.
-- Capability of running within uvicorn
-- WebSocket support!
+- `ASGI <https://asgi.readthedocs.io>`_ framework, the future of Python web services!
+- A built in testing agent for the web ....
+- Capability of running within uvicorn.
 - OpenAPI schema generation, with interactive documentation!
-- Single-page webapp support!
+- Single-page webapp support.
 
 Web features powered by `Starlette <https://www.starlette.io/>`_.
 
@@ -83,7 +82,7 @@ Start RabbitMQ as communication backend.
 
 .. code-block:: shell
 
-    # prerequisite: docker, docker-compose
+    # prerequisite: docker, docker-compose installed
     cd rmq
     docker-compose up
 
@@ -106,27 +105,30 @@ To see the frontend go to ``http://localhost:8000/static/frontend/index.html``.
 The Basic Idea
 --------------
 
-The basic idea is a combination of several best practices I came accros during my work on agent based systems and consolidate them into a single framework, along with some new ideas I have.
-Not everything is 1000% full quality yet so see it as a proof of concept rather than production ready software!
+The basic idea is a combination of several best practices I came across during my work on agent based systems and consolidate them into a single framework, along with some new ideas I have.
+Not everything is 100% full quality (yet), so see it as proof of concept rather than production ready software!
 
 User Guides
 -----------
-A modern message based async agent framework: version (0.2.5)
+A modern message based async agent framework: version (0.4.9)
 
 .. toctree::
    :maxdepth: 2
 
    tour
+   agents
    core
    behaviour
    asgi
+   messages
 
 
 Ideas
 -----
 
 - I love `Volttron <https://github.com/VOLTTRON/volttron>`_ ...
-- https://github.com/ask/mode!!!
+- https://github.com/ask/mode
+- MQTT and AMQP as cloud agnostic messaging backbone.
 - `Uvicorn <https://www.uvicorn.org/>`_ built-in as a production web server.
 
 .. - https://github.com/javipalanca/spade

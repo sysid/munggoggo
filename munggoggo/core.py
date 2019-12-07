@@ -18,7 +18,14 @@ from aiormq import ChannelLockedResource
 from async_timeout import timeout
 
 from handler import Registry, SystemHandler, RmqMessageTypes
-from messages import RpcMessage, RpcError, TraceStoreMessage, PingControl, ServiceStatus, CoreStatus
+from messages import (
+    RpcMessage,
+    RpcError,
+    TraceStoreMessage,
+    PingControl,
+    ServiceStatus,
+    CoreStatus,
+)
 from mode import Service, ServiceT
 from mode.utils.logging import CompositeLogger
 from mode.utils.times import want_seconds
@@ -43,6 +50,7 @@ class MyService(Service):
     """Base class for agent and behaviours
         Defines async service framework.
     """
+
     def __init__(
         self, identity, *, beacon: NodeT = None, loop: asyncio.AbstractEventLoop = None
     ) -> None:
@@ -158,15 +166,18 @@ class Core(MyService):
             interval = self.config.get("UPDATE_PEER_INTERVAL")
             self.log.debug(f"Starting peer update with interval: {interval}")
             # noinspection PyAsyncCall
-            self.add_future(self.periodic_update_peers(interval))  # service awaits future
+            self.add_future(
+                self.periodic_update_peers(interval)
+            )  # service awaits future
 
         await self.setup()
 
     async def setup(self):
-        """ to be overwritten by agent """
+        """ to be overwritten by user """
         pass
 
     async def configure_exchanges(self):
+        """ Configures the exchanges: TOPIC, FANOUT """
         self.topic_exchange = await self.channel.declare_exchange(
             name=BINDING_KEY_TOPIC, type=ExchangeType.TOPIC
         )
@@ -227,7 +238,7 @@ class Core(MyService):
         self.log.info(f"Agent stopped: {self.state}")
 
     async def teardown(self):
-        """" To be overwritten by agent class """
+        """" To be overwritten by user """
         pass
 
     async def on_shutdown(self):
@@ -250,12 +261,15 @@ class Core(MyService):
     #         self.log.info("Client disconnected.")
 
     def has_behaviour(self, behaviour):
+        """ Tests for behaviour """
         return behaviour in self.behaviours
 
     def list_behaviour(self):
+        """ Lists all behaviours """
         return [str(behav) for behav in self.behaviours]
 
     def get_behaviour(self, name: str) -> Optional[ServiceT]:
+        """ Returns the behaviour """
         behav = [behav for behav in self.behaviours if str(behav).endswith(name)]
         if len(behav) > 1:
             self.log.warning(
@@ -266,6 +280,7 @@ class Core(MyService):
         return behav[0]
 
     async def call(self, msg: str, target: str = None) -> str:
+        """ Sends PRC call """
         if target is None:
             target = self.identity  # loopback send
 
@@ -279,7 +294,7 @@ class Core(MyService):
         await self.direct_send(msg, RmqMessageTypes.RPC.name, target, correlation_id)
 
         try:
-            async with timeout(timeout=TIMEOUT):
+            async with timeout(delay=TIMEOUT):
                 result = await future
         except asyncio.TimeoutError as e:
             rpc_message = RpcMessage.from_json(msg)
@@ -296,29 +311,41 @@ class Core(MyService):
     async def direct_send(
         self,
         msg: str,
-        msg_type: str,
+        msg_type: RmqMessageTypes.name,
         target: str = None,
         correlation_id: str = None,
         headers: dict = None,
     ) -> None:
+        """ Sends message to default exchange """
         if target is None:
-            target = self.identity  # loopback send
+            target = self.identity  # loopback send to itself
+
         await self.channel.default_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
             routing_key=target,
             timeout=None,
         )
+        self._add_trace_outgoing(correlation_id, headers, msg, msg_type, target, target)
         self.log.debug(
             f"Sent message: {msg}, routing_key: {self.identity}, type: {msg_type}"
         )
 
     async def fanout_send(
-        self, msg: str, msg_type: str, correlation_id: str = None, headers: dict = None
+        self,
+        msg: str,
+        msg_type: RmqMessageTypes.name,
+        correlation_id: str = None,
+        headers: dict = None,
     ) -> None:
+        """ Sends message to fanout exchange """
+
         await self.fanout_exchange.publish(
             message=self._create_message(msg, msg_type, correlation_id, headers),
             routing_key=BINDING_KEY_FANOUT,
             timeout=None,
+        )
+        self._add_trace_outgoing(
+            correlation_id, headers, msg, msg_type, "fanout", BINDING_KEY_FANOUT
         )
         self.log.debug(f"Sent fanout message: {msg}, routing_key: {BINDING_KEY_FANOUT}")
 
@@ -326,15 +353,25 @@ class Core(MyService):
         """ Publishes message to topic """
         await self.topic_exchange.publish(
             message=self._create_message(
-                msg, msg_type="pubsub", correlation_id=None, headers=headers
+                msg,
+                msg_type=RmqMessageTypes.PUBSUB.name,
+                correlation_id=None,
+                headers=headers,
             ),
             routing_key=routing_key,
             timeout=None,
         )
+        self._add_trace_outgoing(
+            None, headers, msg, RmqMessageTypes.PUBSUB.name, "publish", routing_key
+        )
         self.log.debug(f"Sent: {msg}, routing_key: {routing_key}")
 
     def _create_message(
-        self, msg: str, msg_type: str, correlation_id: str = None, headers: dict = None
+        self,
+        msg: str,
+        msg_type: RmqMessageTypes.name,
+        correlation_id: str = None,
+        headers: dict = None,
     ) -> Message:
         return Message(
             content_type="application/json",
@@ -347,8 +384,27 @@ class Core(MyService):
             correlation_id=correlation_id,
         )
 
-    async def on_message(self, message: IncomingMessage):
+    def _add_trace_outgoing(
+        self, correlation_id, headers, msg, msg_type, target, routing_key
+    ):
+        self.traces.append(
+            TraceStoreMessage(
+                body=msg,
+                headers=headers,
+                correlation_id=correlation_id,
+                type=msg_type,
+                target=target,
+                routing_key=routing_key,
+            ),
+            category="outgoing",
+        )
 
+    async def on_message(self, message: IncomingMessage):
+        """ Handle incoming messages
+
+            Well defined types (RmqMessageTypes) are sent to system handlers,
+            all others are enqueued to behaviour mailbox for user handling.
+        """
         # If context processor will catch an exception, the message will be returned to the queue.
         async with message.process():
             self.log.debug(f"Received (info/body:")
@@ -384,23 +440,26 @@ class Core(MyService):
         )
 
     async def periodic_update_peers(self, interval):
+        """ Sends periodic keepalive message to all peers (if UPDATE_PEER_INTERVAL is set)
+            and publishes the latest peer responses as peer list to websocket.
+        """
         _interval = want_seconds(interval)
         async for _ in self.itertimer(_interval):
             await self._update_peers()
-            msg = self._create_peer_msg()
+            peers = await self.list_peers()
+            msg = {"from": self.identity, "peers": peers}
             await self._publish_ws(msg)
 
-    def _create_peer_msg(self) -> JSONType:
+    async def list_peers(self) -> TraceStore:  # TODO: make property out of method
+        """ list all peers which have responded to the latest PING """
         latest = self.peers.latest()
         corr_id = latest[2]
-        peers = sorted([status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],
-                       key=lambda status: status.name)
+        peers = sorted(
+            [status for (ts, status, cor_id) in self.peers.filter(category=corr_id)],
+            key=lambda status: status.name,
+        )
         peers = CoreStatus.schema().dump(peers, many=True)
-        msg = {
-            'from': self.identity,
-            'peers': peers
-        }
-        return msg
+        return peers
 
     async def _publish_ws(self, msg: JSONType):
         if self.web and self.web.ws:
@@ -411,34 +470,36 @@ class Core(MyService):
                 self.log.exception(e)
 
     # TODO: https://github.com/aio-libs/aiohttp-sse/blob/66407db5752d19abd4d312f0b22fa8106feb6ca2/aiohttp_sse/__init__.py
-    async def publish_sse(self, interval: int, id: str = None, event: str = None, retry: int = None):
-        self.DEFAULT_SEPARATOR = '\r\n'
-        self.LINE_SEP_EXPR = re.compile(r'\r\n|\r|\n')
+    async def publish_sse(
+        self, interval: int, id: str = None, event: str = None, retry: int = None
+    ):
+        self.DEFAULT_SEPARATOR = "\r\n"
+        self.LINE_SEP_EXPR = re.compile(r"\r\n|\r|\n")
         self._sep = self.DEFAULT_SEPARATOR
         async for _ in self.itertimer(want_seconds(interval)):
             data = json.dumps(self._create_peer_msg())
             buffer = io.StringIO()
             if id is not None:
-                buffer.write(self.LINE_SEP_EXPR.sub('', 'id: {}'.format(id)))
+                buffer.write(self.LINE_SEP_EXPR.sub("", "id: {}".format(id)))
                 buffer.write(self._sep)
 
             if event is not None:
-                buffer.write(self.LINE_SEP_EXPR.sub('', 'event: {}'.format(event)))
+                buffer.write(self.LINE_SEP_EXPR.sub("", "event: {}".format(event)))
                 buffer.write(self._sep)
 
             for chunk in self.LINE_SEP_EXPR.split(data):
-                buffer.write('data: {}'.format(chunk))
+                buffer.write("data: {}".format(chunk))
                 buffer.write(self._sep)
 
             if retry is not None:
                 if not isinstance(retry, int):
-                    raise TypeError('retry argument must be int')
-                buffer.write('retry: {}'.format(retry))
+                    raise TypeError("retry argument must be int")
+                buffer.write("retry: {}".format(retry))
                 buffer.write(self._sep)
 
             buffer.write(self._sep)
-            self.log.warning(buffer.getvalue().encode('utf-8'))
-            yield buffer.getvalue().encode('utf-8')
+            self.log.warning(buffer.getvalue().encode("utf-8"))
+            yield buffer.getvalue().encode("utf-8")
 
     def __repr__(self):
         return "{}".format(self.__class__.__name__)
@@ -449,9 +510,7 @@ class Core(MyService):
         for behav in self.behaviours:
             behav_status = ServiceStatus(name=str(behav), state=behav.state)
             behav_stati.append(behav_status)
-        return CoreStatus(
-            name=self.identity, state=self.state, behaviours=behav_stati
-        )
+        return CoreStatus(name=self.identity, state=self.state, behaviours=behav_stati)
 
 
 if __name__ == "__main__":
@@ -462,6 +521,6 @@ if __name__ == "__main__":
     from mode import Worker
 
     config = dict(UPDATE_PEER_INTERVAL=1.0)
-    app = Core(identity='core', config=config)
+    app = Core(identity="core", config=config)
 
     Worker(app, loglevel="info").execute_from_commandline()
