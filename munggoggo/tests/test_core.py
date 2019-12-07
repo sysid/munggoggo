@@ -82,10 +82,11 @@ class TestCommunication:
 
     async def test_fanout_send_recv(self, ctrl, core1, core2):
         # when messages is sent to all receivers
+        await asyncio.sleep(0.2)  # relinquish cpu
         await ctrl.fanout_send(msg="Hallo Thomas", msg_type="type")
         await asyncio.sleep(0.2)  # relinquish cpu
 
-        # then one message should show up in trace.store
+        # then one message should show up in trace.store of all receivers
         msg = ctrl.traces.store[0][1]
         assert "Hallo" in msg.body
 
@@ -140,24 +141,12 @@ class TestPeriodicPeerUpdate:
     async def test_update_peers_self(self, core1):
         # given
         # when core is initialized
+        await asyncio.sleep(0.2)
 
         # then peerlist contains self
         assert len(core1.peers.all()) == 1
         identities = [status.name for (date, status, category) in core1.peers.all()]
         assert "core1" in identities
-
-    async def test_update_peers_self_create_status_message(self, core1):
-        # given
-        expected = {
-            "from": "core1",
-            "peers": [{"name": "core1", "state": "running", "behaviours": []}],
-        }
-
-        # when core is initialized
-
-        # then messages must be created
-        msg = core1._create_peer_msg()
-        assert msg == expected
 
     async def test_periodic_update_peers(self):
         identity = "core1"
