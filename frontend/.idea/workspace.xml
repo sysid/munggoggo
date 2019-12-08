@@ -3,7 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="58053465-4938-44dc-ac4d-f4178f28976d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../munggoggo/asgi_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/../munggoggo/asgi_agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../munggoggo/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/../munggoggo/settings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -131,6 +132,8 @@
       <workItem from="1575727066961" duration="23000" />
       <workItem from="1575727102702" duration="22000" />
       <workItem from="1575727208561" duration="2055000" />
+      <workItem from="1575800431392" duration="114000" />
+      <workItem from="1575800564608" duration="599000" />
     </task>
     <servers />
   </component>

@@ -133,7 +133,7 @@ class AsgiAgent(Starlette):
         # Gotcha: not working with SSE streaming
         # self.add_middleware(GZipMiddleware, minimum_size=1000)
 
-        self.cors = False
+        self.cors = True  # TODO: make it configurable
         self.cors_params = DEFAULT_CORS_PARAMS
         if self.cors:
             self.add_middleware(CORSMiddleware, **self.cors_params)

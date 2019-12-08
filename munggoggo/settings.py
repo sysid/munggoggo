@@ -11,13 +11,13 @@ DEFAULT_API_THEME = "swaggerui"
 DEFAULT_SESSION_COOKIE = "Responder-Session"
 DEFAULT_SECRET_KEY = "NOTASECRET"
 
-BINDING_KEY_FANOUT = 'admin'
-BINDING_KEY_TOPIC = 'topic'
+BINDING_KEY_FANOUT = "admin"
+BINDING_KEY_TOPIC = "topic"
 
-PROJ_PATH = os.getenv('PROJ_DIR')
+PROJ_PATH = os.getenv("PROJ_DIR")
 
 SQLITE_PATH = f"{PROJ_PATH}/example.db"
-DB_URL = f'sqlite:///{SQLITE_PATH}'
+DB_URL = f"sqlite:///{SQLITE_PATH}"
 # DB_URL = 'sqlite:///example.db'
 # DB_URL = 'sqlite:///:memory:'
 
@@ -26,7 +26,7 @@ UPDATE_PEER_INTERVAL = 0.1
 # UPDATE_PEER_INTERVAL = None
 
 DEFAULT_CORS_PARAMS = {
-    "allow_origins": (),
+    "allow_origins": ("*"),
     "allow_methods": ("GET",),
     "allow_headers": (),
     "allow_credentials": False,
@@ -144,4 +144,3 @@ html_sse = """
     </body>
 </html>
 """
-
