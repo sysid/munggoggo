@@ -40,7 +40,7 @@ jedi==0.15.1
 Jinja2==2.10.3
 jupyter-client==5.3.4
 jupyter-core==4.6.1
-Mako==1.1.0
+Mako==1.2.2
 MarkupSafe==1.1.1
 marshmallow==3.2.1
 marshmallow-enum==1.5.1
