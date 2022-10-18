@@ -60,7 +60,7 @@ pluggy==0.13.0
 prompt-toolkit==2.0.10
 ptyprocess==0.6.0
 purepng==0.2.0
-py==1.8.0
+py==1.10.0
 pydot==1.4.1
 Pygments==2.4.2
 pyparsing==2.4.2
