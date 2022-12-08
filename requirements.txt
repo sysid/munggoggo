@@ -15,7 +15,7 @@ attrs==19.3.0
 Babel==2.7.0
 backcall==0.1.0
 bump2version==0.5.11
-certifi==2019.9.11
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 colorlog==4.0.2
